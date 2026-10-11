@@ -1,4 +1,4 @@
-# FitTrack
+# Fitness tracker
 
 Fitness tracker with a **hybrid DBMS**: MySQL (users, profiles, plans, sessions, goals) + Memurai/Redis (simulated wearable stream, daily totals, journals, photo metadata).
 
