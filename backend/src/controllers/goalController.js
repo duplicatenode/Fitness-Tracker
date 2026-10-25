@@ -17,7 +17,8 @@ async function measure(goal, userId, daily) {
     switch (goal.goal_type) {
         case 'weekly_workouts': {
             const params = [userId, goal.start_date];
-            let sql = 'SELECT COUNT(*) AS n FROM workout_sessions WHERE user_id = ? AND start_time >= ?';
+            // only finished workouts count (same rule as trigger trg_session_finished in the database)
+            let sql = 'SELECT COUNT(*) AS n FROM workout_sessions WHERE user_id = ? AND end_time IS NOT NULL AND start_time >= ?';
             if (goal.deadline) {
                 sql += ' AND start_time < DATE_ADD(?, INTERVAL 1 DAY)';
                 params.push(goal.deadline);

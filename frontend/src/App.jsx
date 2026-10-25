@@ -12,6 +12,7 @@ import Goals from './pages/Goals';
 import Journal from './pages/Journal';
 import Analytics from './pages/Analytics';
 import Gallery from './pages/Gallery';
+import AdminUsers from './pages/AdminUsers';
 
 export default function App() {
     return (
@@ -30,6 +31,7 @@ export default function App() {
                             <Route path="analytics" element={<Analytics />} />
                             <Route path="gallery" element={<Gallery />} />
                             <Route path="profile" element={<Profile />} />
+                            <Route path="admin" element={<AdminUsers />} />
                         </Route>
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>

@@ -1,36 +1,34 @@
-# FitTrack Database Design
+# FitTrack Database
 
-This directory contains the database schema, seed data, and connection tests for the FitTrack platform.
+Hybrid design: **MySQL** for structured, related, transactional data and **Memurai** (Redis protocol) for high-volume or flexible data.
 
-## Architecture
+## Files
+| File | Purpose |
+|---|---|
+| `schema.sql` | tables, primary/foreign keys, CHECK, UNIQUE and index definitions (fresh install) |
+| `programmability.sql` | 2 triggers, 1 procedure, 1 function, 2 views (idempotent, uses `DELIMITER`) |
+| `seed.sql` | demo users with roles, profiles, exercises, plans, sessions, sets, goals |
+| `security/roles.sql` | database roles `fittrack_admin` and `fittrack_member` and their grants |
+| `security/create_db_accounts.js` | creates `ft_admin` / `ft_member` and binds them to the roles (passwords from `.env`) |
+| `sqlRunner.js` | runs `.sql` files statement by statement, honouring `DELIMITER` |
+| `setup_mysql.js` | full build: schema, programmability, seed, roles and accounts |
+| `migrate.js` | upgrades an existing database in place |
+| `queries.sql` | the important queries (joins, aggregates, subqueries, CTEs, views, index plan) |
+| `demo/` | one script per demo item (see `../DEMO_GUIDE.md`) |
+| `docs/` | ER diagram (`er_diagram.png`, `.mmd`, `.svg`), `RELATIONAL_SCHEMA.md`, `UI_TABLE_MAPPING.md` |
+| `show_users.js` | lists users, roles and profiles |
+| `memurai_setup.js` | connection test and sample writes for Memurai |
 
-FitTrack uses a hybrid DBMS architecture combining Relational (MySQL) and NoSQL (Memurai) storage to handle different data access patterns efficiently.
-
-### MySQL (Relational Data)
-**Purpose:** Stores structured, highly-relational data where consistency (ACID) and complex joins are required.
-- **Entities:** Users, User Profiles (1:1 with Users), Workout Plans, Exercises, Workout Sessions, Workout Sets, Fitness Goals.
-- **Benefits:** We can enforce referential integrity (e.g., you cannot delete an exercise if it's currently part of a workout plan without explicit handling). We can easily run aggregate queries (e.g., total volume lifted per session).
-- **Files:** `schema.sql`, `seed.sql`, `queries.sql`
-
-### Memurai (NoSQL / Redis Protocol)
-**Purpose:** Stores high-volume, append-only, or flexible-schema activity data where low latency and horizontal scaling are more critical than complex joins.
-- **Entities:** 
-  - **Sensor Readings (Streams):** `fittrack:sensors:{userId}` - Append-only time-series data representing wearable outputs.
-  - **Daily Summaries (Hashes):** `fittrack:activity:daily:{userId}:{YYYY-MM-DD}` - Fast, frequently updated aggregations.
-  - **Workout Journals (Strings with JSON):** `fittrack:journal:{userId}:{journalId}` - Unstructured, flexible journal entries.
-  - **Photo Metadata (Strings with JSON):** `fittrack:photos:{userId}:{photoId}`
-- **Benefits:** Incredibly fast writes for the wearable simulator. Streams allow efficient chronological retrieval and bounded history queries.
-
-## Setup Instructions
-
-Make sure your `.env` file in the project root has the correct credentials.
-
-To run the SQL setup (creates schema and seeds demo data):
-```bash
+## Build
+```
 node database/setup_mysql.js
 ```
+(needs `DB_USER`, `DB_PASSWORD`, `DB_ADMIN_PASSWORD`, `DB_MEMBER_PASSWORD` in `.env`)
 
-To run the Memurai setup (tests connection and writes sample data):
-```bash
-node database/memurai_setup.js
-```
+## Memurai key design
+| Key | Type | Notes |
+|---|---|---|
+| `fittrack:sensors:{userId}` | Stream | append-only wearable readings |
+| `fittrack:activity:daily:{userId}:{YYYY-MM-DD}` | Hash | daily totals, updated often |
+| `fittrack:journal:{userId}:{id}` | String (JSON) | flexible journal entries |
+| `fittrack:photos:{userId}:{id}` | String (JSON) | photo metadata (no image files) |

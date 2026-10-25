@@ -17,7 +17,7 @@ const sign = (user) => jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, 
 // Full user record = users row (no password hash) + 1:1 profile row
 async function loadUser(id, conn = pool) {
     const [rows] = await conn.query(
-        `SELECT u.id, u.name, u.email, u.created_at, u.last_login_at,
+        `SELECT u.id, u.name, u.email, u.role, u.created_at, u.last_login_at,
                 DATE_FORMAT(p.date_of_birth, '%Y-%m-%d') AS date_of_birth,
                 p.gender, p.height_cm, p.weight_kg, p.fitness_level
          FROM users u
@@ -31,6 +31,7 @@ async function loadUser(id, conn = pool) {
         id: r.id,
         name: r.name,
         email: r.email,
+        role: r.role,
         created_at: r.created_at,
         last_login_at: r.last_login_at,
         profile: {

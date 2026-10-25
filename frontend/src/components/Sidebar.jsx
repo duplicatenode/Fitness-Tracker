@@ -1,12 +1,13 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Activity, LogOut } from 'lucide-react';
-import { NAV_ITEMS } from '../navigation';
+import { ADMIN_ITEM, NAV_ITEMS } from '../navigation';
 import { SimulatorPill } from './SimulatorStatus';
 import { useAuth } from '../context/AuthContext';
 import { initials } from '../utils/format';
 
 export default function Sidebar({ open, onNavigate }) {
     const { user, logout } = useAuth();
+    const items = user?.role === 'admin' ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
 
     return (
         <aside
@@ -24,7 +25,7 @@ export default function Sidebar({ open, onNavigate }) {
 
             <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-2">
                 <ul className="space-y-0.5">
-                    {NAV_ITEMS.map(({ path, label, icon: Icon, end }) => (
+                    {items.map(({ path, label, icon: Icon, end }) => (
                         <li key={path}>
                             <NavLink
                                 to={path}

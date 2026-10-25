@@ -1,0 +1,97 @@
+erDiagram
+    USERS {
+        int id PK
+        varchar name "2-100 chars"
+        varchar email UK
+        varchar password_hash "bcrypt"
+        enum role "admin | member"
+        timestamp created_at
+        timestamp last_login_at
+    }
+    USER_PROFILES {
+        int user_id PK,FK
+        date date_of_birth
+        varchar gender
+        decimal height_cm
+        decimal weight_kg
+        varchar fitness_level
+        timestamp updated_at
+    }
+    WORKOUT_PLANS {
+        int id PK
+        int user_id FK
+        varchar name
+        text description
+        timestamp created_at
+    }
+    EXERCISES {
+        int id PK
+        varchar name UK
+        text description
+        varchar muscle_group
+        varchar equipment_needed
+    }
+    PLAN_EXERCISES {
+        int id PK
+        int plan_id FK
+        int exercise_id FK
+        int sets
+        int reps
+        decimal target_weight
+        int rest_seconds
+        int exercise_order
+    }
+    WORKOUT_SESSIONS {
+        int id PK
+        int user_id FK
+        int plan_id FK "nullable"
+        datetime start_time
+        datetime end_time "NULL while open"
+        text notes
+    }
+    WORKOUT_SETS {
+        int id PK
+        int session_id FK
+        int exercise_id FK
+        int set_number "UK with session, exercise"
+        int reps
+        decimal weight
+        boolean completed
+    }
+    FITNESS_GOALS {
+        int id PK
+        int user_id FK
+        varchar goal_type
+        int target_value
+        date start_date
+        date deadline
+        varchar status
+    }
+    ACTIVITY_LOG {
+        int id PK
+        int user_id FK
+        varchar event_type
+        varchar message
+        timestamp created_at
+    }
+    ROLE_AUDIT_LOG {
+        int id PK
+        int actor_id FK
+        int target_user_id FK
+        varchar old_role
+        varchar new_role
+        timestamp changed_at
+    }
+
+    USERS ||--o| USER_PROFILES : "has one (1:1)"
+    USERS ||--o{ WORKOUT_PLANS : "owns"
+    USERS ||--o{ WORKOUT_SESSIONS : "logs"
+    USERS ||--o{ FITNESS_GOALS : "sets"
+    USERS ||--o{ ACTIVITY_LOG : "receives"
+    USERS ||--o{ ROLE_AUDIT_LOG : "acts as actor"
+    USERS ||--o{ ROLE_AUDIT_LOG : "is changed in"
+    WORKOUT_PLANS ||--o{ PLAN_EXERCISES : "contains"
+    EXERCISES ||--o{ PLAN_EXERCISES : "used in plans"
+    WORKOUT_PLANS |o--o{ WORKOUT_SESSIONS : "followed by"
+    WORKOUT_SESSIONS ||--o{ WORKOUT_SETS : "records"
+    EXERCISES ||--o{ WORKOUT_SETS : "performed as"

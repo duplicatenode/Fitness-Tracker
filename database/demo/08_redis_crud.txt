@@ -1,0 +1,20 @@
+PING
+SET fittrack:journal:1:demo-journal-2 "{\"id\":\"demo-journal-2\",\"title\":\"Leg day\",\"notes\":\"Squats felt heavy\",\"mood\":\"tired\",\"tags\":[\"legs\"],\"timestamp\":\"2026-10-25T10:00:00Z\"}"
+HSET fittrack:activity:daily:1:2026-10-25 total_steps 8200 total_calories 310
+XADD fittrack:sensors:1 * timestamp 2026-10-25T10:05:00Z heart_rate 92 step_increment 30 calories_burned 4.1 activity_state walking
+GET fittrack:journal:1:demo-journal-2
+EXISTS fittrack:journal:1:demo-journal-2
+TYPE fittrack:journal:1:demo-journal-2
+SCAN 0 MATCH fittrack:journal:1:* COUNT 100
+HGETALL fittrack:activity:daily:1:2026-10-25
+HGET fittrack:activity:daily:1:2026-10-25 total_steps
+XREVRANGE fittrack:sensors:1 + - COUNT 3
+XLEN fittrack:sensors:1
+SET fittrack:journal:1:demo-journal-2 "{\"id\":\"demo-journal-2\",\"title\":\"Leg day (edited)\",\"notes\":\"Squats felt heavy - added 5kg next week\",\"mood\":\"energetic\",\"tags\":[\"legs\",\"progress\"],\"timestamp\":\"2026-10-25T10:00:00Z\"}" XX
+GET fittrack:journal:1:demo-journal-2
+HINCRBY fittrack:activity:daily:1:2026-10-25 total_steps 150
+HSET fittrack:activity:daily:1:2026-10-25 total_calories 340
+HGETALL fittrack:activity:daily:1:2026-10-25
+HDEL fittrack:activity:daily:1:2026-10-25 total_calories
+DEL fittrack:journal:1:demo-journal-2
+GET fittrack:journal:1:demo-journal-2

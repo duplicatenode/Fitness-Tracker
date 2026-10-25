@@ -55,3 +55,40 @@ Registration/login/profile/password APIs (validation matrix, duplicate emails, c
 
 ## Not included
 Email verification, password reset by email, and rate-limiting of login attempts. For a real deployment, set a strong `JWT_SECRET` in `.env`.
+
+---
+
+# Update 3 - DBMS Level 3 (database depth, roles, demo)
+
+## Database (`database/`)
+* **Schema** (`schema.sql`): `users.role` (`admin` | `member`), CHECK constraints for ranges and allowed values
+  (reps, weight, height, goal target and dates, session times, status), UNIQUE `(session_id, exercise_id, set_number)`,
+  named foreign keys, explicit indexes inside `CREATE TABLE` (re-runnable), new tables `activity_log` and `role_audit_log`.
+  `exercises.name` is UNIQUE.
+* **Triggers** (`programmability.sql`):
+  * `trg_sets_locked_session` (BEFORE INSERT on `workout_sets`) - refuses sets for a finished session.
+  * `trg_session_finished` (AFTER UPDATE on `workout_sessions`) - on finish: writes `SESSION_FINISHED`, and marks active weekly goals that reach their target as `completed` with a `GOAL_COMPLETED` row.
+* **Procedure** `sp_change_role(actor, target, role)` - caller must be an admin, the last admin cannot be demoted, every change is audited.
+* **Function** `fn_session_volume(session_id)` - lifted volume of a session.
+* **Views** `v_user_directory`, `v_session_summary`.
+* **Database roles and accounts** (`security/`): `fittrack_admin` (all privileges) and `fittrack_member` (read app data except password hashes and the audit log; write only own working data). Accounts `ft_admin` and `ft_member` are created from `.env` passwords.
+* **Setup**: `setup_mysql.js` runs the schema, the stored programs, the seed and the accounts. `sqlRunner.js` handles `DELIMITER`. `migrate.js` upgrades an existing database.
+* **Seed**: four users (one admin), profiles, shared exercises, three plans, sessions (one left open for the trigger demo), sets, goals. Re-runnable.
+* **Queries** (`queries.sql`): 14 labelled queries, including nested, correlated, CTE, recursive CTE, window function and `EXPLAIN`.
+* **Demo scripts** (`demo/`): one per demo item, plus a reset script.
+* **Redis**: CRUD command list (`demo/08_redis_crud.txt`) and a member ACL user (`demo/09_redis_acl.sh`).
+* **Docs** (`docs/`): ER diagram (`er_diagram.png`, `.mmd`, `.svg`), relational schema and data dictionary, UI-to-table mapping.
+
+## Backend
+* `GET /api/admin/users`, `PUT /api/admin/users/:id/role`, `GET /api/admin/activity` - admin only (`middleware/requireRole.js` reads the role from the database on each request).
+* Role-change errors from the procedure are returned as readable messages.
+* `role` is returned with the user from login, sign-up and `/auth/me`.
+* A workout counts toward a weekly goal only once **finished**, which matches the trigger.
+* `ensureSchema` adds `users.role`, `activity_log` and `role_audit_log` to an existing database.
+
+## Frontend
+* **Users & roles** page (admins only): role counts, every account with a role selector, activity log and role-change audit.
+
+## Security
+* Database passwords, the Redis member password and the JWT secret come from `.env` only. `.env` is git-ignored.
+* Member accounts cannot read password hashes or the audit log, and cannot delete users or change roles at the database level.

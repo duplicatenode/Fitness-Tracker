@@ -3,8 +3,12 @@ const pool = require('./mysql');
 /**
  * Idempotent schema upgrade, run on backend start (and by `node database/migrate.js`).
  * Brings an existing fittrack_db up to date without touching existing data:
- *   - users.last_login_at              (new column)
- *   - user_profiles                    (new 1:1 table with the user's personal details)
+ *   - users.last_login_at              (column)
+ *   - users.role                       (column: admin | member, RBAC)
+ *   - user_profiles                    (1:1 table with the user's personal details)
+ *   - activity_log, role_audit_log     (tables written by triggers / sp_change_role)
+ * Triggers, procedures and views are created by database/programmability.sql
+ * (run by database/setup_mysql.js or database/migrate.js).
  */
 async function columnExists(table, column) {
     const [rows] = await pool.query(
@@ -21,6 +25,11 @@ async function ensureSchema() {
         console.log('[schema] Added users.last_login_at');
     }
 
+    if (!(await columnExists('users', 'role'))) {
+        await pool.query("ALTER TABLE users ADD COLUMN role ENUM('admin','member') NOT NULL DEFAULT 'member'");
+        console.log('[schema] Added users.role');
+    }
+
     await pool.query(`
         CREATE TABLE IF NOT EXISTS user_profiles (
             user_id INT PRIMARY KEY,
@@ -31,6 +40,31 @@ async function ensureSchema() {
             fitness_level VARCHAR(20) NULL,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             CONSTRAINT fk_profile_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS activity_log (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            event_type VARCHAR(40) NOT NULL,
+            message VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_activity_user_time (user_id, created_at)
+        ) ENGINE=InnoDB
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS role_audit_log (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            actor_id INT NOT NULL,
+            target_user_id INT NOT NULL,
+            old_role VARCHAR(10) NOT NULL,
+            new_role VARCHAR(10) NOT NULL,
+            changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_audit_actor FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE CASCADE,
+            CONSTRAINT fk_audit_target FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB
     `);
 }

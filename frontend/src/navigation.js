@@ -1,4 +1,4 @@
-import { LayoutDashboard, Dumbbell, History, Target, NotebookPen, LineChart, Images } from 'lucide-react';
+import { LayoutDashboard, Dumbbell, History, Target, NotebookPen, LineChart, Images, ShieldCheck } from 'lucide-react';
 
 // `ranged: true` shows the date-range selector in the header for that page
 export const NAV_ITEMS = [
@@ -13,8 +13,12 @@ export const NAV_ITEMS = [
 
 export const PROFILE_ITEM = { path: '/profile', label: 'My profile' };
 
+// Shown in the sidebar only to users whose role is admin (the API enforces this too)
+export const ADMIN_ITEM = { path: '/admin', label: 'Users & roles', icon: ShieldCheck };
+
 export function findNavItem(pathname) {
     if (pathname === PROFILE_ITEM.path) return PROFILE_ITEM;
+    if (pathname === ADMIN_ITEM.path) return ADMIN_ITEM;
     return (
         NAV_ITEMS.find((i) => (i.end ? pathname === i.path : pathname === i.path || pathname.startsWith(`${i.path}/`))) ||
         NAV_ITEMS[0]
