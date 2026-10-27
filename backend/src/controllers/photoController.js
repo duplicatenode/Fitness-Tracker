@@ -1,4 +1,5 @@
 const memuraiClient = require('../config/memurai');
+const { scanKeys } = require('../config/scanKeys');
 
 // Progress-photo METADATA lives in Memurai at fittrack:photos:{userId}:{photoId} (see database/README.md).
 // No image files are stored by the backend; an entry may optionally carry an http(s) image_url.
@@ -8,7 +9,7 @@ const isHttpUrl = (v) => typeof v === 'string' && /^https?:\/\//i.test(v);
 
 exports.getPhotos = async (req, res) => {
     try {
-        const keys = await memuraiClient.keys(`fittrack:photos:${req.user.id}:*`);
+        const keys = await scanKeys(`fittrack:photos:${req.user.id}:*`);
         if (keys.length === 0) return res.json([]);
         const data = await memuraiClient.mGet(keys);
         const photos = data

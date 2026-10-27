@@ -1,8 +1,8 @@
 {
   "name": "fitnesstracker",
   "version": "1.0.0",
-  "description": "",
-  "main": "test_memurai.js",
+  "description": "FitTrack database scripts (MySQL + Memurai)",
+  "main": "database/setup_mysql.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
