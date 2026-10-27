@@ -1,5 +1,9 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import Redirect from '../components/Redirect';
 import { Check, Circle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { errorMessage } from '../api';
@@ -31,15 +35,16 @@ export function PasswordChecklist({ password, id }) {
 }
 
 export default function Signup() {
-    const { isAuthenticated, register } = useAuth();
-    const navigate = useNavigate();
+    const { ready, isAuthenticated, register } = useAuth();
+    const router = useRouter();
     const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
     const [profile, setProfile] = useState(EMPTY_PROFILE);
     const [touched, setTouched] = useState({});
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
 
-    if (isAuthenticated) return <Navigate to="/" replace />;
+    if (!ready) return null;
+    if (isAuthenticated) return <Redirect to="/" />;
 
     const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
     const blur = (k) => () => setTouched((t) => ({ ...t, [k]: true }));
@@ -64,7 +69,7 @@ export default function Signup() {
         Object.entries(profile).forEach(([k, v]) => { if (v !== '' && v != null) payload[k] = v; });
         try {
             await register(payload);
-            navigate('/', { replace: true });
+            router.replace('/');
         } catch (err) {
             const msg = errorMessage(err, 'Could not create your account.');
             setError(msg === 'User already exists' ? 'An account with this email already exists.' : msg);
@@ -117,7 +122,7 @@ export default function Signup() {
             </form>
 
             <p className="mt-5 text-center text-sm text-text-soft">
-                Already have an account? <Link to="/login" className="font-medium text-brand-700 hover:text-brand-600">Sign in</Link>
+                Already have an account? <Link href="/login" className="font-medium text-brand-700 hover:text-brand-600">Sign in</Link>
             </p>
         </AuthLayout>
     );

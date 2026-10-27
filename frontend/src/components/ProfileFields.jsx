@@ -1,3 +1,5 @@
+'use client';
+
 // Shared option lists + fields for the optional personal details (sign-up and profile page)
 export const GENDER_OPTIONS = [
     { value: '', label: 'Select' },

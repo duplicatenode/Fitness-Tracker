@@ -1,3 +1,5 @@
+'use client';
+
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export function Skeleton({ className = '' }) {

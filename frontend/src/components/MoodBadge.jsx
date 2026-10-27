@@ -1,3 +1,5 @@
+'use client';
+
 import { BatteryLow, Frown, Meh, Smile, Zap } from 'lucide-react';
 import { humanize } from '../utils/format';
 

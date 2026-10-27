@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import api from '../api';
 
@@ -12,8 +14,17 @@ const readStoredUser = () => {
 };
 
 export function AuthProvider({ children }) {
-    const [token, setToken] = useState(() => localStorage.getItem('token'));
-    const [user, setUser] = useState(readStoredUser);
+    // Next.js renders pages on the server first, where localStorage does not exist.
+    // The stored session is read once in the browser; `ready` tells pages it has been checked.
+    const [ready, setReady] = useState(false);
+    const [token, setToken] = useState(null);
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        setToken(localStorage.getItem('token'));
+        setUser(readStoredUser());
+        setReady(true);
+    }, []);
 
     const persist = useCallback((nextToken, nextUser) => {
         localStorage.setItem('token', nextToken);
@@ -78,8 +89,8 @@ export function AuthProvider({ children }) {
     }, [logout]);
 
     const value = useMemo(
-        () => ({ token, user, isAuthenticated: Boolean(token), login, loginDemo, register, updateProfile, changePassword, logout }),
-        [token, user, login, loginDemo, register, updateProfile, changePassword, logout]
+        () => ({ ready, token, user, isAuthenticated: Boolean(token), login, loginDemo, register, updateProfile, changePassword, logout }),
+        [ready, token, user, login, loginDemo, register, updateProfile, changePassword, logout]
     );
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo, useState } from 'react';
 import { NotebookPen, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import api, { errorMessage } from '../api';

@@ -1,3 +1,5 @@
+'use client';
+
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { STATE_COLORS } from '../../utils/colors';
 import { fmtNumber, humanize } from '../../utils/format';

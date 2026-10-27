@@ -1,3 +1,5 @@
+'use client';
+
 const TONES = { emerald: 'bg-brand-500', coral: 'bg-coral-500', amber: 'bg-amber-data', sky: 'bg-sky-data' };
 
 export default function ProgressBar({ value, tone = 'emerald', label }) {

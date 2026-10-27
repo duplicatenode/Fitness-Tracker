@@ -1,5 +1,8 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ChevronRight, Menu, RefreshCw } from 'lucide-react';
 import { findNavItem } from '../navigation';
 import { RANGE_OPTIONS, usePageControls } from '../context/PageControlsContext';
@@ -7,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { fmtDate, initials } from '../utils/format';
 
 export default function Header({ onMenu, menuOpen }) {
-    const { pathname } = useLocation();
+    const pathname = usePathname();
     const item = findNavItem(pathname);
     const { range, setRange, refresh } = usePageControls();
     const { user } = useAuth();
@@ -63,7 +66,7 @@ export default function Header({ onMenu, menuOpen }) {
             </button>
 
             <Link
-                to="/profile"
+                href="/profile"
                 className="hidden size-9 items-center justify-center rounded-full bg-ink-900 text-[13px] font-semibold text-white transition-opacity hover:opacity-85 sm:flex"
                 title="My profile"
                 aria-label={`My profile (${user?.name || 'user'})`}

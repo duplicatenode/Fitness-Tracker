@@ -1,4 +1,7 @@
-import { Link, NavLink } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Activity, LogOut } from 'lucide-react';
 import { ADMIN_ITEM, NAV_ITEMS } from '../navigation';
 import { SimulatorPill } from './SimulatorStatus';
@@ -7,6 +10,8 @@ import { initials } from '../utils/format';
 
 export default function Sidebar({ open, onNavigate }) {
     const { user, logout } = useAuth();
+    const pathname = usePathname();
+    const isActivePath = (path, end) => (end ? pathname === path : pathname === path || pathname.startsWith(`${path}/`));
     const items = user?.role === 'admin' ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
 
     return (
@@ -25,35 +30,32 @@ export default function Sidebar({ open, onNavigate }) {
 
             <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-2">
                 <ul className="space-y-0.5">
-                    {items.map(({ path, label, icon: Icon, end }) => (
-                        <li key={path}>
-                            <NavLink
-                                to={path}
-                                end={end}
-                                onClick={onNavigate}
-                                className={({ isActive }) =>
-                                    `group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    {items.map(({ path, label, icon: Icon, end }) => {
+                        const isActive = isActivePath(path, end);
+                        return (
+                            <li key={path}>
+                                <Link
+                                    href={path}
+                                    onClick={onNavigate}
+                                    aria-current={isActive ? 'page' : undefined}
+                                    className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                                         isActive ? 'bg-ink-700 text-white' : 'text-slate-400 hover:bg-ink-800 hover:text-white'
-                                    }`
-                                }
-                            >
-                                {({ isActive }) => (
-                                    <>
-                                        {isActive && <span className="absolute -left-3 top-2 h-6 w-1 rounded-r bg-brand-500" aria-hidden="true" />}
-                                        <Icon size={18} className={isActive ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-300'} aria-hidden="true" />
-                                        {label}
-                                    </>
-                                )}
-                            </NavLink>
-                        </li>
-                    ))}
+                                    }`}
+                                >
+                                    {isActive && <span className="absolute -left-3 top-2 h-6 w-1 rounded-r bg-brand-500" aria-hidden="true" />}
+                                    <Icon size={18} className={isActive ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-300'} aria-hidden="true" />
+                                    {label}
+                                </Link>
+                            </li>
+                        );
+                    })}
                 </ul>
             </nav>
 
             <div className="shrink-0 space-y-3 border-t border-ink-700 p-3">
                 <SimulatorPill dark />
                 <div className="flex items-center gap-1 px-1">
-                    <Link to="/profile" onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1.5 transition-colors hover:bg-ink-800" aria-label="My profile">
+                    <Link href="/profile" onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1.5 transition-colors hover:bg-ink-800" aria-label="My profile">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink-700 text-[13px] font-semibold text-white" aria-hidden="true">
                             {initials(user?.name)}
                         </div>

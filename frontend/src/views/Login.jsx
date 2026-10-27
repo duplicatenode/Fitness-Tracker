@@ -1,26 +1,31 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import Redirect from '../components/Redirect';
 import { useAuth } from '../context/AuthContext';
 import { errorMessage } from '../api';
 import AuthLayout from '../components/AuthLayout';
 import PasswordInput from '../components/PasswordInput';
 
 export default function Login() {
-    const { isAuthenticated, login, loginDemo } = useAuth();
-    const navigate = useNavigate();
+    const { ready, isAuthenticated, login, loginDemo } = useAuth();
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [busy, setBusy] = useState(null); // 'login' | 'demo' | null
     const [error, setError] = useState('');
 
-    if (isAuthenticated) return <Navigate to="/" replace />;
+    if (!ready) return null;
+    if (isAuthenticated) return <Redirect to="/" />;
 
     const run = async (kind, action) => {
         setBusy(kind);
         setError('');
         try {
             await action();
-            navigate('/', { replace: true });
+            router.replace('/');
         } catch (err) {
             setError(errorMessage(err, 'Sign in failed.'));
             setBusy(null);
@@ -51,7 +56,7 @@ export default function Login() {
                     <p role="alert" className="rounded-lg border border-coral-100 bg-coral-50 px-3 py-2.5 text-[13px] text-coral-600">
                         {error}
                         {error === 'Invalid credentials' && (
-                            <> Check your email and password, or <Link to="/signup" className="font-medium underline">create an account</Link>.</>
+                            <> Check your email and password, or <Link href="/signup" className="font-medium underline">create an account</Link>.</>
                         )}
                     </p>
                 )}
@@ -62,7 +67,7 @@ export default function Login() {
             </form>
 
             <p className="mt-5 text-center text-sm text-text-soft">
-                New to FitTrack? <Link to="/signup" className="font-medium text-brand-700 hover:text-brand-600">Create an account</Link>
+                New to FitTrack? <Link href="/signup" className="font-medium text-brand-700 hover:text-brand-600">Create an account</Link>
             </p>
 
             <div className="my-6 flex items-center gap-3 text-xs text-text-muted" aria-hidden="true">

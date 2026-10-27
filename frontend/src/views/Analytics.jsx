@@ -1,3 +1,5 @@
+'use client';
+
 import { Flame, Footprints, Heart, HeartPulse, Info } from 'lucide-react';
 import api from '../api';
 import useFetch from '../hooks/useFetch';
