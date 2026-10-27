@@ -1,3 +1,5 @@
+'use client';
+
 export default function ChartTooltip({ active, label, rows = [], title }) {
     if (!active || rows.length === 0) return null;
     return (

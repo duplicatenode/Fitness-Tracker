@@ -1,4 +1,6 @@
-import { Navigate } from 'react-router-dom';
+'use client';
+
+import Redirect from '../components/Redirect';
 import { ScrollText, ShieldCheck, Users, UserRound } from 'lucide-react';
 import api, { errorMessage } from '../api';
 import useFetch from '../hooks/useFetch';
@@ -28,7 +30,7 @@ export default function AdminUsers() {
     const users = useFetch(async () => (await api.get('/admin/users')).data, [refreshKey]);
     const audit = useFetch(async () => (await api.get('/admin/activity')).data, [refreshKey]);
 
-    if (me && me.role !== 'admin') return <Navigate to="/" replace />;
+    if (me && me.role !== 'admin') return <Redirect to="/" />;
 
     const changeRole = async (target, role) => {
         if (role === target.role) return;

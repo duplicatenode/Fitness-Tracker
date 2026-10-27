@@ -1,3 +1,5 @@
+'use client';
+
 import { Fragment, useState } from 'react';
 import { CalendarDays, Check, ChevronDown, ChevronRight, History as HistoryIcon, Play, X } from 'lucide-react';
 import api, { errorMessage } from '../api';

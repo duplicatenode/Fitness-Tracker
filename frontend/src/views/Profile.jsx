@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { CalendarClock, KeyRound, Mail, UserRound } from 'lucide-react';
 import { errorMessage } from '../api';

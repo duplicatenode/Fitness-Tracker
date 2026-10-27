@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { CalendarClock, Flame, Footprints, Dumbbell, Pencil, Plus, Target, Trash2 } from 'lucide-react';
 import api, { errorMessage } from '../api';

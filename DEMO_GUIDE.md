@@ -27,7 +27,7 @@ Commands are for **Windows (cmd)**. Use `cmd /c "..."` in PowerShell so that `<`
    | Terminal | Command |
    |---|---|
    | 1 | `cd backend` then `npm start` |
-   | 2 | `cd frontend` then `npm run dev` |
+   | 2 | `cd frontend` then `npm run dev` (Next.js, http://localhost:3000) |
    | 3 | `node simulator\wearableSimulator.js` |
 
 ### Demo accounts (passwords are stored only as bcrypt hashes)
@@ -149,26 +149,23 @@ The two database roles are `fittrack_admin` and `fittrack_member` (`database/sec
 | ER diagram | 2 | `database/docs/er_diagram.png` |
 | Relational schema with keys and constraints | 3 | `database/docs/RELATIONAL_SCHEMA.md`, demo 02 |
 | SQL DDL with constraints | 4 | `database/schema.sql` (PK, FK, CHECK, UNIQUE, INDEX), `ALTER` in `backend/src/config/ensureSchema.js`, `DROP ... IF EXISTS` in `programmability.sql` |
-| NoSQL / Memurai creation | 4 | `database/docs/RELATIONAL_SCHEMA.md` section 6, `database/memurai_setup.js` |
-| Technology justification | 1 | `database/docs/RELATIONAL_SCHEMA.md` (hybrid design) |
+| NoSQL / Memurai creation | 4 | `database/docs/RELATIONAL_SCHEMA.md` section 7, `database/memurai_setup.js` |
+| Technology justification | 1 | `database/docs/RELATIONAL_SCHEMA.md` section 6 (why MySQL + Memurai) |
 | DML operations | 4 | demo 03 (all tables), `queries.sql` |
 | Nested / correlated / recursive queries, joins | 4 | `queries.sql` 8, 9, 11; demo 07 |
 | Procedure / function, trigger, CTE | 6 | `programmability.sql`; demo 04, 05; `queries.sql` 10, 11 |
 | NoSQL feature RUD | 7 | demo 08 (and 09) |
-| Next.js interface | 3 | **see the gap below** |
-| Backend / API and DB integration | 2 | `backend/src/controllers/*`, `database/docs/UI_TABLE_MAPPING.md` |
+| Next.js interface | 3 | `frontend/src/app/` - App Router routes, shared signed-in layout, client-side role guard |
+| Backend / API and DB integration | 2 | Next.js calls the Express API (`frontend/src/api.js`), `backend/src/controllers/*`, `database/docs/UI_TABLE_MAPPING.md` |
 | Authentication, min. 2 roles, role-based access in DB | 4 | `users.role`, `requireRole`, demo 06, `database/security/roles.sql` |
-| Documentation, Git/GitHub | 2 | this guide, `README.md`, `CHANGES.md`, git history |
+| Documentation, Git/GitHub | 2 | this guide, `README.md`, `database/docs/`, git history |
 | Originality, individual contribution, viva | 4 | be ready to explain each trigger, the procedure and the role grants |
-
-**Gap to be aware of:** the rubric asks for a **Next.js** interface. The UI here is **React + Vite**, not Next.js. Its API is Express,
-not Next.js route handlers. Tell the evaluator this directly. Converting the UI would be a separate task.
 
 ---
 
 ## 5. Security notes
 
-- The real `.env` file was in the project folder you uploaded. **Change `DB_PASSWORD` if it has been shared anywhere.**
+- `.env` is git-ignored; `.env.example` holds placeholders only. The backend exits at startup if a required secret is missing.
 - Database accounts (`ft_admin`, `ft_member`) and the Redis member user take their passwords from `.env` or from your shell only.
 - Passwords in the database are bcrypt hashes. `show_users.js` shows only the first characters of the hash.
 - Row ownership (a member editing only their own rows) is enforced by the API. MySQL has no built-in row-level security.

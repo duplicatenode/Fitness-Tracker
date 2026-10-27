@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
 import { ArrowRight, Dumbbell, Flame, Footprints, Heart, NotebookPen, Target } from 'lucide-react';
 import api from '../api';
 import useFetch from '../hooks/useFetch';
@@ -21,7 +23,7 @@ function Panel({ title, to, linkLabel, children }) {
         <section className="card flex flex-col p-5" aria-label={title}>
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="card-title">{title}</h2>
-                <Link to={to} className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-600">
+                <Link href={to} className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-600">
                     {linkLabel} <ArrowRight size={14} aria-hidden="true" />
                 </Link>
             </div>

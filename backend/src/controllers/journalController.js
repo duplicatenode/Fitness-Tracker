@@ -1,4 +1,5 @@
 const memuraiClient = require('../config/memurai');
+const { scanKeys } = require('../config/scanKeys');
 
 const SAFE_ID = /^[A-Za-z0-9_-]+$/;
 const keyFor = (userId, id) => `fittrack:journal:${userId}:${id}`;
@@ -12,8 +13,8 @@ exports.getJournals = async (req, res) => {
         const userId = req.user.id;
         const pattern = `fittrack:journal:${userId}:*`;
         
-        // Scan for keys
-        const keys = await memuraiClient.keys(pattern);
+        // SCAN (non-blocking) instead of KEYS
+        const keys = await scanKeys(pattern);
         
         if (keys.length === 0) return res.json([]);
         

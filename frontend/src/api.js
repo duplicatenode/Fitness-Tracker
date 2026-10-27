@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// Centralised API client. Base URL can be overridden with VITE_API_URL (see frontend/.env.example).
+// Centralised API client for the Express backend.
+// Base URL can be overridden with NEXT_PUBLIC_API_URL (see frontend/.env.example).
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
     timeout: 15000
 });
 
