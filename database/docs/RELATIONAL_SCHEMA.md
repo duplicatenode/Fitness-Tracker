@@ -104,7 +104,33 @@ or the exercise. The only deliberate duplication is `workout_sessions.plan_id` v
 Row ownership (a member only edits *their own* rows) is enforced by the API (`WHERE user_id = ?`).
 MySQL has no built-in row-level security, so the database role limits *which tables and columns* a member can touch.
 
-## 6. NoSQL component - Memurai (Redis protocol)
+## 6. Why two databases (technology justification)
+
+FitTrack stores two very different kinds of data, so each goes where it fits best.
+
+**MySQL (relational) for the core records.** Users, profiles, plans, exercises, sessions, sets and goals are tightly linked
+(a set belongs to a session, which belongs to a user and may follow a plan). They need:
+- **referential integrity** - foreign keys with `CASCADE`, `SET NULL` and `RESTRICT` keep the links valid;
+- **validation in the database** - `CHECK`, `UNIQUE` and `NOT NULL` reject bad values whatever the client sends;
+- **transactions** - sign-up writes `users` and `user_profiles` together or not at all;
+- **joins and aggregates** - history, leaderboards and goal progress are `JOIN` / `GROUP BY` queries;
+- **business rules next to the data** - triggers, a stored procedure and a function (section 4).
+
+**Memurai / Redis (key-value NoSQL) for high-volume and flexible data.**
+- **Wearable readings** arrive every 5 seconds per user. A Redis **Stream** is append-only and ordered by time, so writes are
+  cheap and `XREVRANGE` returns the latest readings without scanning a table. In MySQL this would mean one row per reading and
+  an index growing all day.
+- **Daily totals** change on every reading. A **Hash** per user per day is updated in place with `HINCRBY`, without
+  update-heavy row locking.
+- **Journal entries and photo metadata** have a loose, changing shape (free text, mood, any number of tags). Storing each as a
+  JSON document avoids extra tag tables and schema changes for a field that may be added later.
+- None of this data needs joins or foreign keys, and losing one reading is harmless, so Redis's speed matters more here than
+  relational guarantees.
+
+The link between the two stores is the **user id**: every Memurai key starts with `fittrack:...:{userId}`, and the API only
+builds keys from the id in the signed-in user's token.
+
+## 7. NoSQL component - Memurai (Redis protocol)
 
 Used for data that is written very often, is append-only, or has a flexible shape. It is not joined with the SQL tables.
 
@@ -112,7 +138,7 @@ Used for data that is written very often, is append-only, or has a flexible shap
 |---|---|---|---|
 | `fittrack:sensors:{userId}` | Stream | wearable simulator (every 5 s) | `XADD` create, `XRANGE`/`XREVRANGE` read, `XDEL` delete |
 | `fittrack:activity:daily:{userId}:{YYYY-MM-DD}` | Hash | simulator and daily totals | `HSET`/`HINCRBY` create/update, `HGETALL` read, `HDEL` delete |
-| `fittrack:journal:{userId}:{id}` | String (JSON) | journal page | `SET` create/update (`XX`), `GET`, `SCAN`, `DEL` |
+| `fittrack:journal:{userId}:{id}` | String (JSON) | journal page | `SET` create/update (`XX`), `GET`, `SCAN` (listing, non-blocking), `DEL` |
 | `fittrack:photos:{userId}:{id}` | String (JSON) | gallery page | `SET`, `GET`, `DEL` |
 
 Access control for Memurai/Redis: an ACL user `ft_redis_member` is limited to the `fittrack:*` keys, read and write only,
