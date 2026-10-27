@@ -3,6 +3,14 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
+// Secrets come only from .env - refuse to start without them
+for (const name of ['JWT_SECRET', 'DB_USER', 'DB_PASSWORD']) {
+    if (!process.env[name]) {
+        console.error(`[config] ${name} is not set. Copy .env.example to .env and fill it in.`);
+        process.exit(1);
+    }
+}
+
 const mysqlPool = require('./config/mysql');
 const memuraiClient = require('./config/memurai');
 const ensureSchema = require('./config/ensureSchema');
