@@ -30,3 +30,23 @@ C = create, R = read, U = update, D = delete. "Redis" = Memurai.
 | Value ranges (reps, weight, height, goal target, dates) | database | `CHECK` constraints in `schema.sql` (the API also validates and returns friendly messages) |
 | No duplicate sets | database | `UNIQUE (session_id, exercise_id, set_number)` |
 | Database credentials are not in code | configuration | `.env` (`DB_*`, `DB_ADMIN_PASSWORD`, `DB_MEMBER_PASSWORD`, `REDIS_*`); `.env` is git-ignored |
+
+## Where each screen lives in the Next.js app
+
+Each URL is a Next.js App Router route. The route file renders one screen component, and that component calls the API through `frontend/src/api.js`.
+
+| URL | Next.js route file (`frontend/src/app/`) | Screen component (`frontend/src/views/`) |
+|---|---|---|
+| `/login` | `login/page.jsx` | `Login.jsx` |
+| `/signup` | `signup/page.jsx` | `Signup.jsx` |
+| `/` | `(app)/page.jsx` | `Dashboard.jsx` |
+| `/plans` | `(app)/plans/page.jsx` | `Plans.jsx` |
+| `/history` | `(app)/history/page.jsx` | `History.jsx` |
+| `/goals` | `(app)/goals/page.jsx` | `Goals.jsx` |
+| `/journal` | `(app)/journal/page.jsx` | `Journal.jsx` |
+| `/analytics` | `(app)/analytics/page.jsx` | `Analytics.jsx` |
+| `/gallery` | `(app)/gallery/page.jsx` | `Gallery.jsx` |
+| `/profile` | `(app)/profile/page.jsx` | `Profile.jsx` |
+| `/admin` | `(app)/admin/page.jsx` | `AdminUsers.jsx` |
+
+Every route inside `(app)/` shares `(app)/layout.jsx`, which sends signed-out users to `/login` and draws the sidebar and header.
