@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 const PageControlsContext = createContext(null);

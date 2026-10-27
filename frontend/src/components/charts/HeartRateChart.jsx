@@ -1,3 +1,5 @@
+'use client';
+
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { COLORS } from '../../utils/colors';
 import { fmtDate, fmtDateTime, fmtTime } from '../../utils/format';

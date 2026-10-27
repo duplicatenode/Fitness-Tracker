@@ -1,3 +1,5 @@
+'use client';
+
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { COLORS } from '../../utils/colors';
 import { fmtDate, fmtNumber } from '../../utils/format';

@@ -1,3 +1,5 @@
+'use client';
+
 import { Watch } from 'lucide-react';
 import { useSimulator } from '../context/SimulatorContext';
 import { humanize, timeAgo } from '../utils/format';

@@ -1,14 +1,19 @@
+'use client';
+
 import { useEffect, useState } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
+import Redirect from './Redirect';
+import { LoadingBlock } from './States';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useAuth } from '../context/AuthContext';
 import { PageControlsProvider } from '../context/PageControlsContext';
 import { SimulatorProvider } from '../context/SimulatorContext';
 
-export default function AppShell() {
-    const { isAuthenticated } = useAuth();
-    const { pathname } = useLocation();
+// Shared layout for every signed-in page (used by src/app/(app)/layout.jsx)
+export default function AppShell({ children }) {
+    const { ready, isAuthenticated } = useAuth();
+    const pathname = usePathname();
     // The drawer is "open for" a specific path, so it closes by itself when the route changes
     const [openPath, setOpenPath] = useState(null);
     const menuOpen = openPath === pathname;
@@ -22,7 +27,8 @@ export default function AppShell() {
         return () => document.removeEventListener('keydown', onKey);
     }, [menuOpen]);
 
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (!ready) return <div className="p-8"><LoadingBlock /></div>;
+    if (!isAuthenticated) return <Redirect to="/login" />;
 
     return (
         <PageControlsProvider>
@@ -35,7 +41,7 @@ export default function AppShell() {
                 <div className="min-h-screen lg:pl-[256px]">
                     <Header onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} />
                     <main id="main" className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                        <Outlet />
+                        {children}
                     </main>
                 </div>
             </SimulatorProvider>

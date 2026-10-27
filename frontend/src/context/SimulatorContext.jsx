@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useMemo } from 'react';
 import api from '../api';
 import useFetch from '../hooks/useFetch';

@@ -1,3 +1,5 @@
+'use client';
+
 import { Activity, Flame, Footprints, Heart } from 'lucide-react';
 
 /** Split layout shared by the Sign in and Create account pages. */

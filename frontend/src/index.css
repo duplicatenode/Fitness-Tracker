@@ -1,4 +1,4 @@
-/* FitTrack global stylesheet — Tailwind CSS v4 (loaded via the @tailwindcss/vite plugin) */
+/* FitTrack global stylesheet — Tailwind CSS v4 (loaded via @tailwindcss/postcss, see postcss.config.mjs) */
 @import "@fontsource-variable/inter";
 @import "tailwindcss";
 

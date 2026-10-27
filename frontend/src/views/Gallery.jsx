@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Images, Plus, Trash2 } from 'lucide-react';
 import api, { errorMessage } from '../api';

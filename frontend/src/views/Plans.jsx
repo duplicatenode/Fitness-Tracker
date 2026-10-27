@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Dumbbell, Eye, ListChecks, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
 import api, { errorMessage } from '../api';
 import useFetch from '../hooks/useFetch';
@@ -161,7 +163,7 @@ function PlanDetail({ plan, onClose, onEdit, onStart, starting }) {
 }
 
 export default function Plans() {
-    const navigate = useNavigate();
+    const router = useRouter();
     const toast = useToast();
     const { refreshKey } = usePageControls();
     const plans = useFetch(async () => (await api.get('/workouts/plans')).data, [refreshKey]);
@@ -176,7 +178,7 @@ export default function Plans() {
         try {
             await api.post('/workouts/sessions', { plan_id: plan.id });
             toast.success('Session started');
-            navigate('/history');
+            router.push('/history');
         } catch (err) {
             toast.error(errorMessage(err));
             setBusy(false);
