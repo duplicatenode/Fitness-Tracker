@@ -83,9 +83,11 @@ node database\show_users.js                  list users, roles and profiles
 node database\migrate.js                     upgrade an existing database
 node database\memurai_setup.js               test Memurai and write sample data
 ```
+
 ## Team contributions
 
+| Member | SRN | Contributions |
+|---|---|---|
 | Sarthki Vachhani | PES1UG24CS422 | MySQL schema and constraints, triggers and procedure, seed data, demo scripts, Express API |
 | Sejal Siddapuram | PES1UG24CS426 | Next.js frontend, backend cleanup, documentation and project report, testing |
-
 Project report (objectives, requirements, architecture, screenshots, test results, conclusion): [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md)
