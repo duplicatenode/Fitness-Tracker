@@ -8,6 +8,7 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
+    agentRules: false, // stop `next dev` from writing an AGENTS.md file
     turbopack: { root: appRoot },
     outputFileTracingRoot: appRoot
 };
