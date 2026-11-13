@@ -95,9 +95,8 @@ All credentials and the JWT secret are read from `.env` (git-ignored). The backe
 
 ## 6. Testing results
 
-**Environment for the recorded run:** Node 22, MariaDB 10.11 (MySQL-compatible), Redis 7.0, database built from scratch with
-`node database/setup_mysql.js`, seed data from `database/seed.sql`.
-<!-- Re-run on your own machine (MySQL 8 + Memurai) before the demo and update this line if anything differs. -->
+**Environments tested:** MySQL 8.0 + Redis 7.0 on Ubuntu 24.04, and MySQL 8.0 + Memurai on Windows 11, Node 22.
+Each time the database was built from scratch with `node database/setup_mysql.js` and seed data from `database/seed.sql`.
 
 ### 6.1 Database integrity and stored programs
 

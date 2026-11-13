@@ -3,8 +3,29 @@
 Everything below runs on the database that `database/setup_mysql.js` builds. Each demo item is one file, so you can
 open it in a notepad and copy the command.
 
-Commands are for **Windows (cmd)**. Use `cmd /c "..."` in PowerShell so that `<` redirection works. The Redis ACL script
-(item 9b) needs Git Bash.
+Commands are for **Windows Command Prompt**. In Command Prompt, run them without the `cmd /c "..."` wrapper; the wrapper is
+only needed in PowerShell, so that `<` redirection works.
+
+### Before you start (Windows)
+- **Run every command from the project folder:** `cd %USERPROFILE%\Fitness-Tracker`
+- **`mysql` not recognized?** Add MySQL to your PATH once, then open a new window:
+  ```
+  powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path','User') + ';C:\Program Files\MySQL\MySQL Server 8.0\bin', 'User')"
+  ```
+- **Password prompts:** `ft_admin` uses `DB_ADMIN_PASSWORD` and `ft_member` uses `DB_MEMBER_PASSWORD` from `.env`.
+- **Showing commands live:** open the file in Notepad (`notepad database\demo\03_crud_all_tables.sql`), start
+  `mysql -u ft_admin -p -h localhost fittrack_db`, and paste statements one at a time so each `Query OK` is visible.
+  Inside `mysql>`, a whole file can be run with `source database/demo/04_trigger_before_after.sql` (forward slashes).
+- **Keep the app windows open:** the backend, frontend and simulator windows must stay running; use a separate window for demo commands.
+
+### On Ubuntu (Linux)
+Same files, Linux syntax: drop `cmd /c "..."`, use `/` in paths, and use `redis-cli` for Redis. For example:
+```
+mysql -u ft_admin -p fittrack_db < database/demo/01_users_and_roles.sql
+redis-cli < database/demo/08_redis_crud.txt
+```
+On Ubuntu, MySQL's root user needs a password for `setup_mysql.js` (one-time):
+`sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'your-root-password';"`
 
 ---
 
@@ -112,12 +133,13 @@ Expected result: Demo User, average 3680 kg.
 
 ### Item 9 - Redis (Memurai) create, read, update, delete
 ```
-cmd /c "redis-cli -h 127.0.0.1 -p 6379 < database\demo\08_redis_crud.txt"
+memurai-cli < database\demo\08_redis_crud.txt
 ```
+(On Ubuntu: `redis-cli < database/demo/08_redis_crud.txt`. Memurai is the Windows build of Redis and installs `memurai-cli`, not `redis-cli`.)
 Creates a journal entry (string JSON), a daily activity hash and a sensor stream entry. Then reads, updates (`SET ... XX`, `HINCRBY`) and deletes them.
 The commands are plain lines, so you can paste them one by one.
 
-Redis role-based access (item 9b, Git Bash):
+Redis role-based access (item 9b, optional - runs on Ubuntu, or on Windows only if `redis-cli` is installed):
 ```
 export REDIS_MEMBER_PASSWORD='the value from your .env'
 bash database/demo/09_redis_acl.sh

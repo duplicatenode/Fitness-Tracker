@@ -52,6 +52,8 @@ ROLE_AUDIT_LOG   (id PK, actor_id FK -> USERS.id, target_user_id FK -> USERS.id,
 | exercises | id | INT AUTO_INCREMENT | no | **PK** |
 | exercises | name | VARCHAR(255) | no | **UNIQUE** |
 | workout_plans | id / user_id | INT | no | PK / FK to users, CASCADE |
+| workout_plans | name | VARCHAR(255) | no | |
+| workout_plans | created_at / updated_at | TIMESTAMP | yes | `updated_at` changes automatically on every update (`ON UPDATE CURRENT_TIMESTAMP`) |
 | plan_exercises | id | INT AUTO_INCREMENT | no | PK |
 | plan_exercises | plan_id | INT | no | FK to workout_plans, CASCADE |
 | plan_exercises | exercise_id | INT | no | FK to exercises, **RESTRICT** (a used exercise cannot be deleted) |
