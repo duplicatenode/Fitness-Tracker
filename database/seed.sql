@@ -23,15 +23,32 @@ INSERT IGNORE INTO user_profiles (user_id, date_of_birth, gender, height_cm, wei
 (3, '2002-08-19', 'male',   175.0, 78.0, 'beginner'),
 (4, '1998-11-03', 'female', 160.0, 55.0, 'intermediate');
 
--- ---- Exercise catalogue (shared, not user-owned) ------------------
-INSERT IGNORE INTO exercises (id, name, description, muscle_group, equipment_needed) VALUES
-(1, 'Bench Press',    'Lying on a bench and pressing weight upwards', 'Chest', 'Barbell'),
-(2, 'Squat',          'Bending the knees and hips to lower the torso', 'Legs', 'Barbell'),
-(3, 'Deadlift',       'Lifting a loaded barbell off the ground', 'Back', 'Barbell'),
-(4, 'Pull-up',        'Pulling the body up to a bar', 'Back', 'Bodyweight'),
-(5, 'Treadmill Run',  'Running at a steady pace', 'Cardio', 'Treadmill'),
-(6, 'Overhead Press', 'Pressing a barbell from shoulder height to overhead', 'Shoulders', 'Barbell'),
-(7, 'Lunges',         'Stepping forward and lowering the back knee', 'Legs', 'Bodyweight');
+-- ---- Body parts (admin-managed groups members build plans from) ----
+INSERT IGNORE INTO body_parts (id, name, description) VALUES
+(1, 'Chest',     'Pushing muscles of the upper body'),
+(2, 'Back',      'Pulling muscles of the upper body'),
+(3, 'Legs',      'Quads, hamstrings, glutes and calves'),
+(4, 'Shoulders', 'Front, side and rear delts'),
+(5, 'Arms',      'Biceps and triceps'),
+(6, 'Core',      'Abs and obliques'),
+(7, 'Cardio',    'Heart-rate and endurance work');
+
+-- ---- Exercise catalogue (admin-managed; each has a body part and default sets x reps) ----
+INSERT IGNORE INTO exercises (id, name, description, body_part_id, equipment_needed, default_sets, default_reps) VALUES
+(1,  'Bench Press',    'Lying on a bench and pressing weight upwards',       1, 'Barbell',    4, 8),
+(2,  'Squat',          'Bending the knees and hips to lower the torso',      3, 'Barbell',    4, 8),
+(3,  'Deadlift',       'Lifting a loaded barbell off the ground',            2, 'Barbell',    3, 5),
+(4,  'Pull-up',        'Pulling the body up to a bar',                       2, 'Bodyweight', 3, 8),
+(5,  'Treadmill Run',  'Running intervals at a steady pace',                 7, 'Treadmill',  5, 1),
+(6,  'Overhead Press', 'Pressing a barbell from shoulder height to overhead',4, 'Barbell',    3, 10),
+(7,  'Lunges',         'Stepping forward and lowering the back knee',        3, 'Bodyweight', 3, 12),
+(8,  'Push-up',        'Lowering and pushing the body up from the floor',    1, 'Bodyweight', 3, 15),
+(9,  'Lateral Raise',  'Raising dumbbells out to the sides',                 4, 'Dumbbell',   3, 12),
+(10, 'Bicep Curl',     'Curling dumbbells up towards the shoulders',         5, 'Dumbbell',   3, 12),
+(11, 'Tricep Dip',     'Lowering and pressing the body on parallel bars',    5, 'Bodyweight', 3, 10),
+(12, 'Crunches',       'Curling the shoulders up off the floor',             6, 'Bodyweight', 3, 20),
+(13, 'Russian Twist',  'Rotating the torso side to side while seated',       6, 'Bodyweight', 3, 20),
+(14, 'Jump Rope',      'Skipping rope in timed rounds',                      7, 'Jump rope',  5, 50);
 
 -- ---- Workout plans -------------------------------------------------
 INSERT IGNORE INTO workout_plans (id, user_id, name, description) VALUES

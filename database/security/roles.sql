@@ -9,7 +9,7 @@
 --   fittrack_member  : READ the app data it needs (never password hashes, never the
 --                      audit log) and WRITE only its own working data (plans, sessions,
 --                      sets, goals, profile). It cannot delete users, change roles,
---                      edit the exercise catalogue, or call sp_change_role.
+--                      edit the body parts or exercise catalogue, or call sp_change_role.
 -- Re-runnable: the roles are dropped and rebuilt, then the accounts are re-bound.
 -- =====================================================================
 
@@ -21,6 +21,7 @@ CREATE ROLE 'fittrack_member';
 GRANT ALL PRIVILEGES ON fittrack_db.* TO 'fittrack_admin';
 
 -- ---- Member: READ only what the app shows ----------------------------
+GRANT SELECT ON fittrack_db.body_parts       TO 'fittrack_member';
 GRANT SELECT ON fittrack_db.exercises        TO 'fittrack_member';
 GRANT SELECT ON fittrack_db.workout_plans    TO 'fittrack_member';
 GRANT SELECT ON fittrack_db.plan_exercises   TO 'fittrack_member';

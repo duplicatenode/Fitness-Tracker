@@ -48,16 +48,32 @@ CREATE TABLE IF NOT EXISTS workout_plans (
     CONSTRAINT fk_plan_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 4. EXERCISES  (shared catalogue, not user-owned)
+-- 4. BODY_PARTS  (managed by admins: the groups members build plans from)
+CREATE TABLE IF NOT EXISTS body_parts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_body_part_name CHECK (CHAR_LENGTH(name) BETWEEN 2 AND 50)
+) ENGINE=InnoDB;
+
+-- 5. EXERCISES  (shared catalogue managed by admins; each belongs to one body part
+--    and carries the default sets/reps copied into a member's plan)
 CREATE TABLE IF NOT EXISTS exercises (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
-    muscle_group VARCHAR(100),
-    equipment_needed VARCHAR(100)
+    body_part_id INT NOT NULL,
+    equipment_needed VARCHAR(100),
+    default_sets INT NOT NULL DEFAULT 3,
+    default_reps INT NOT NULL DEFAULT 10,
+    CONSTRAINT fk_exercise_body_part FOREIGN KEY (body_part_id) REFERENCES body_parts(id) ON DELETE RESTRICT,
+    CONSTRAINT chk_ex_default_sets CHECK (default_sets BETWEEN 1 AND 50),
+    CONSTRAINT chk_ex_default_reps CHECK (default_reps BETWEEN 1 AND 500),
+    INDEX idx_ex_body_part (body_part_id)
 ) ENGINE=InnoDB;
 
--- 5. PLAN_EXERCISES  (M:N between workout_plans and exercises, with attributes)
+-- 6. PLAN_EXERCISES  (M:N between workout_plans and exercises, with attributes)
 CREATE TABLE IF NOT EXISTS plan_exercises (
     id INT AUTO_INCREMENT PRIMARY KEY,
     plan_id INT NOT NULL,
@@ -74,7 +90,7 @@ CREATE TABLE IF NOT EXISTS plan_exercises (
     CONSTRAINT chk_pe_rest CHECK (rest_seconds IS NULL OR rest_seconds BETWEEN 0 AND 3600)
 ) ENGINE=InnoDB;
 
--- 6. WORKOUT_SESSIONS  (a user's actual workout, optionally following a plan)
+-- 7. WORKOUT_SESSIONS  (a user's actual workout, optionally following a plan)
 CREATE TABLE IF NOT EXISTS workout_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -88,7 +104,7 @@ CREATE TABLE IF NOT EXISTS workout_sessions (
     INDEX idx_user_sessions (user_id, start_time)
 ) ENGINE=InnoDB;
 
--- 7. WORKOUT_SETS  (performance per set inside a session)
+-- 8. WORKOUT_SETS  (performance per set inside a session)
 CREATE TABLE IF NOT EXISTS workout_sets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     session_id INT NOT NULL,
@@ -105,7 +121,7 @@ CREATE TABLE IF NOT EXISTS workout_sets (
     INDEX idx_set_exercise (exercise_id)
 ) ENGINE=InnoDB;
 
--- 8. FITNESS_GOALS  (per-user targets; status is maintained by trigger trg_session_finished)
+-- 9. FITNESS_GOALS  (per-user targets; status is maintained by trigger trg_session_finished)
 CREATE TABLE IF NOT EXISTS fitness_goals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -121,7 +137,7 @@ CREATE TABLE IF NOT EXISTS fitness_goals (
     INDEX idx_user_goals (user_id, status)
 ) ENGINE=InnoDB;
 
--- 9. ACTIVITY_LOG  (written by triggers - one row per finished session and per goal completed)
+-- 10. ACTIVITY_LOG  (written by triggers - one row per finished session and per goal completed)
 CREATE TABLE IF NOT EXISTS activity_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -132,7 +148,7 @@ CREATE TABLE IF NOT EXISTS activity_log (
     INDEX idx_activity_user_time (user_id, created_at)
 ) ENGINE=InnoDB;
 
--- 10. ROLE_AUDIT_LOG  (written by procedure sp_change_role - who changed whose role, and when)
+-- 11. ROLE_AUDIT_LOG  (written by procedure sp_change_role - who changed whose role, and when)
 CREATE TABLE IF NOT EXISTS role_audit_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     actor_id INT NOT NULL,
