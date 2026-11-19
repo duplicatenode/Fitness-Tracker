@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Activity, LogOut } from 'lucide-react';
-import { ADMIN_ITEM, NAV_ITEMS } from '../navigation';
+import { ADMIN_ITEMS, NAV_ITEMS } from '../navigation';
 import { SimulatorPill } from './SimulatorStatus';
 import { useAuth } from '../context/AuthContext';
 import { initials } from '../utils/format';
@@ -12,7 +12,7 @@ export default function Sidebar({ open, onNavigate }) {
     const { user, logout } = useAuth();
     const pathname = usePathname();
     const isActivePath = (path, end) => (end ? pathname === path : pathname === path || pathname.startsWith(`${path}/`));
-    const items = user?.role === 'admin' ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
+    const items = user?.role === 'admin' ? [...NAV_ITEMS, ...ADMIN_ITEMS] : NAV_ITEMS;
 
     return (
         <aside

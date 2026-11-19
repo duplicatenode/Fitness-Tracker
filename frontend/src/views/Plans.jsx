@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dumbbell, Eye, ListChecks, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
+import { Dumbbell, Eye, ListChecks, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import api, { errorMessage } from '../api';
 import useFetch from '../hooks/useFetch';
 import { usePageControls } from '../context/PageControlsContext';
@@ -12,34 +12,34 @@ import Modal, { ConfirmDialog } from '../components/Modal';
 import { EmptyState, ErrorState, LoadingBlock } from '../components/States';
 import { fmtDate } from '../utils/format';
 
-const blankRow = (exercises) => ({ exercise_id: exercises[0]?.id ?? '', sets: 3, reps: 10, rest_seconds: 60 });
-
 function PlanForm({ plan, onClose, onSaved }) {
     const toast = useToast();
     const editing = Boolean(plan);
-    const exercises = useFetch(async () => (await api.get('/workouts/exercises')).data, []);
+    // The catalogue an admin maintains: body parts, each with its exercises and default sets x reps
+    const catalogue = useFetch(async () => (await api.get('/workouts/body-parts')).data, []);
     const detail = useFetch(async () => (await api.get(`/workouts/plans/${plan.id}`)).data, [plan?.id], { enabled: editing });
 
     const [name, setName] = useState(plan?.name || '');
     const [description, setDescription] = useState(plan?.description || '');
-    const [rows, setRows] = useState([]);
+    const [picked, setPicked] = useState([]);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        if (detail.data) {
-            setRows(detail.data.exercises.map((e) => ({ exercise_id: e.exercise_id, sets: e.sets, reps: e.reps, rest_seconds: e.rest_seconds ?? 60 })));
-        }
+        if (detail.data) setPicked(detail.data.body_part_ids || []);
     }, [detail.data]);
 
-    const setRow = (i, patch) => setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
+    const toggle = (id) => setPicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+    const parts = catalogue.data || [];
+    const included = parts.filter((p) => picked.includes(p.id)).flatMap((p) => p.exercises);
 
     const submit = async (e) => {
         e.preventDefault();
         if (!name.trim()) return setError('Give the plan a name.');
+        if (picked.length === 0) return setError('Choose at least one body part.');
         setSaving(true);
         setError('');
-        const body = { name: name.trim(), description: description.trim(), exercises: rows.filter((r) => r.exercise_id) };
+        const body = { name: name.trim(), description: description.trim(), body_part_ids: picked };
         try {
             if (editing) await api.put(`/workouts/plans/${plan.id}`, body);
             else await api.post('/workouts/plans', body);
@@ -59,7 +59,7 @@ function PlanForm({ plan, onClose, onSaved }) {
             onClose={onClose}
             size="lg"
             title={editing ? 'Edit workout plan' : 'Create workout plan'}
-            description="Name your plan and choose the exercises it includes."
+            description="Name your plan and pick the body parts to train. The exercises come from the catalogue your admin set up."
             footer={
                 <>
                     <button type="button" className="btn" onClick={onClose}>Cancel</button>
@@ -72,7 +72,7 @@ function PlanForm({ plan, onClose, onSaved }) {
             <form id="plan-form" onSubmit={submit} className="space-y-5" noValidate>
                 <div>
                     <label htmlFor="plan-name" className="field-label">Plan name</label>
-                    <input id="plan-name" data-autofocus className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full body strength" maxLength={255} />
+                    <input id="plan-name" data-autofocus className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Upper body day" maxLength={255} />
                 </div>
                 <div>
                     <label htmlFor="plan-desc" className="field-label">Description</label>
@@ -80,45 +80,47 @@ function PlanForm({ plan, onClose, onSaved }) {
                 </div>
 
                 <fieldset>
-                    <legend className="field-label">Exercises</legend>
-                    {loadingEdit || exercises.loading ? <LoadingBlock rows={2} /> : exercises.error ? (
-                        <p className="text-[13px] text-coral-600" role="alert">{exercises.error}</p>
+                    <legend className="field-label">Body parts</legend>
+                    {loadingEdit || catalogue.loading ? <LoadingBlock rows={2} /> : catalogue.error ? (
+                        <p className="text-[13px] text-coral-600" role="alert">{catalogue.error}</p>
+                    ) : parts.length === 0 ? (
+                        <p className="text-[13px] text-text-muted">No body parts yet. Ask an admin to set up the exercise catalogue.</p>
                     ) : (
-                        <>
-                            {rows.length === 0 && <p className="mb-3 text-[13px] text-text-muted">No exercises added yet.</p>}
-                            <ul className="space-y-3">
-                                {rows.map((row, i) => (
-                                    <li key={i} className="grid grid-cols-[1fr_auto] gap-2 rounded-lg border border-line p-3 sm:grid-cols-[1fr_72px_72px_88px_auto] sm:items-end">
-                                        <div className="col-span-2 sm:col-span-1">
-                                            <label htmlFor={`ex-${i}`} className="mb-1 block text-xs text-text-muted">Exercise</label>
-                                            <select id={`ex-${i}`} className="input" value={row.exercise_id} onChange={(e) => setRow(i, { exercise_id: Number(e.target.value) })}>
-                                                {exercises.data.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}{ex.muscle_group ? ` · ${ex.muscle_group}` : ''}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`sets-${i}`} className="mb-1 block text-xs text-text-muted">Sets</label>
-                                            <input id={`sets-${i}`} type="number" min="1" className="input" value={row.sets} onChange={(e) => setRow(i, { sets: e.target.value })} />
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`reps-${i}`} className="mb-1 block text-xs text-text-muted">Reps</label>
-                                            <input id={`reps-${i}`} type="number" min="1" className="input" value={row.reps} onChange={(e) => setRow(i, { reps: e.target.value })} />
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`rest-${i}`} className="mb-1 block text-xs text-text-muted">Rest (s)</label>
-                                            <input id={`rest-${i}`} type="number" min="0" className="input" value={row.rest_seconds} onChange={(e) => setRow(i, { rest_seconds: e.target.value })} />
-                                        </div>
-                                        <button type="button" className="btn-icon col-start-2 row-start-3 justify-self-end sm:col-start-auto sm:row-start-auto" onClick={() => setRows((r) => r.filter((_, idx) => idx !== i))} aria-label={`Remove exercise ${i + 1}`}>
-                                            <X size={17} />
-                                        </button>
+                        <ul className="grid gap-2 sm:grid-cols-2">
+                            {parts.map((p) => {
+                                const on = picked.includes(p.id);
+                                const empty = p.exercises.length === 0;
+                                return (
+                                    <li key={p.id}>
+                                        <label className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${on ? 'border-brand-500 bg-brand-50' : 'border-line hover:bg-canvas'} ${empty ? 'cursor-not-allowed opacity-60' : ''}`}>
+                                            <input type="checkbox" className="mt-0.5 size-4 accent-[var(--color-brand-600)]" checked={on} disabled={empty} onChange={() => toggle(p.id)} />
+                                            <span className="min-w-0">
+                                                <span className="block text-sm font-medium text-text">{p.name}</span>
+                                                <span className="block truncate text-xs text-text-muted">
+                                                    {empty ? 'No exercises yet' : p.exercises.map((e) => e.name).join(', ')}
+                                                </span>
+                                            </span>
+                                        </label>
                                     </li>
-                                ))}
-                            </ul>
-                            <button type="button" className="btn mt-3" onClick={() => setRows((r) => [...r, blankRow(exercises.data)])} disabled={exercises.data.length === 0}>
-                                <Plus size={15} aria-hidden="true" /> Add exercise
-                            </button>
-                        </>
+                                );
+                            })}
+                        </ul>
                     )}
                 </fieldset>
+
+                {included.length > 0 && (
+                    <div className="rounded-lg border border-line bg-canvas/60 p-3">
+                        <p className="mb-2 text-xs font-medium text-text-soft">Your plan will include {included.length} {included.length === 1 ? 'exercise' : 'exercises'}:</p>
+                        <ul className="space-y-1">
+                            {included.map((e) => (
+                                <li key={e.id} className="flex justify-between gap-3 text-[13px]">
+                                    <span className="text-text">{e.name}</span>
+                                    <span className="tabular text-text-muted">{e.default_sets} × {e.default_reps}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
 
                 {error && <p role="alert" className="rounded-lg border border-coral-100 bg-coral-50 px-3 py-2.5 text-[13px] text-coral-600">{error}</p>}
             </form>
@@ -144,14 +146,14 @@ function PlanDetail({ plan, onClose, onEdit, onStart, starting }) {
             }
         >
             {loading ? <LoadingBlock rows={4} /> : error ? <ErrorState message={error} onRetry={reload} compact /> : data.exercises.length === 0 ? (
-                <EmptyState icon={ListChecks} compact title="No exercises in this plan" description="Edit the plan to add exercises." />
+                <EmptyState icon={ListChecks} compact title="No exercises in this plan" description="Edit the plan and pick body parts." />
             ) : (
                 <ol className="divide-y divide-line">
                     {data.exercises.map((e) => (
                         <li key={e.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
                             <div>
                                 <p className="text-sm font-medium text-text">{e.name}</p>
-                                <p className="text-[13px] text-text-muted">{[e.muscle_group, e.equipment_needed].filter(Boolean).join(' · ')}</p>
+                                <p className="text-[13px] text-text-muted">{[e.body_part, e.equipment_needed].filter(Boolean).join(' · ')}</p>
                             </div>
                             <p className="tabular shrink-0 text-[13px] text-text-soft">{e.sets} × {e.reps}{e.rest_seconds ? ` · ${e.rest_seconds}s rest` : ''}</p>
                         </li>
@@ -218,7 +220,7 @@ export default function Plans() {
                     <EmptyState
                         icon={Dumbbell}
                         title="No workout plans yet"
-                        description="Create your first plan to organise your exercises, sets and reps."
+                        description="Create a plan by picking the body parts you want to train."
                         action={<button type="button" className="btn btn-primary" onClick={() => setForm({})}><Plus size={16} aria-hidden="true" /> Create workout plan</button>}
                     />
                 </div>
@@ -236,6 +238,11 @@ export default function Plans() {
                                 </div>
                             </div>
                             <p className="mt-3 line-clamp-2 min-h-10 text-[13px] leading-relaxed text-text-soft">{p.description || 'No description.'}</p>
+                            {p.body_parts && (
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                    {p.body_parts.split(', ').map((bp) => <span key={bp} className="badge bg-brand-50 text-brand-700">{bp}</span>)}
+                                </div>
+                            )}
                             <div className="mt-3 flex flex-wrap gap-2">
                                 <span className="badge bg-canvas text-text-soft">{p.exercise_count} {p.exercise_count === 1 ? 'exercise' : 'exercises'}</span>
                                 <span className="badge bg-canvas text-text-soft">{p.session_count} {p.session_count === 1 ? 'session' : 'sessions'}</span>
