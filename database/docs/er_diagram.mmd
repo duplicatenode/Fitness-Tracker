@@ -1,3 +1,7 @@
+---
+config:
+  layout: elk
+---
 erDiagram
     USERS {
         int id PK
@@ -25,12 +29,20 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+    BODY_PARTS {
+        int id PK
+        varchar name UK "2-50 chars"
+        varchar description
+        timestamp created_at
+    }
     EXERCISES {
         int id PK
         varchar name UK
         text description
-        varchar muscle_group
+        int body_part_id FK
         varchar equipment_needed
+        int default_sets "1-50"
+        int default_reps "1-500"
     }
     PLAN_EXERCISES {
         int id PK
@@ -92,6 +104,7 @@ erDiagram
     USERS ||--o{ ROLE_AUDIT_LOG : "acts as actor"
     USERS ||--o{ ROLE_AUDIT_LOG : "is changed in"
     WORKOUT_PLANS ||--o{ PLAN_EXERCISES : "contains"
+    BODY_PARTS ||--o{ EXERCISES : "groups"
     EXERCISES ||--o{ PLAN_EXERCISES : "used in plans"
     WORKOUT_PLANS |o--o{ WORKOUT_SESSIONS : "followed by"
     WORKOUT_SESSIONS ||--o{ WORKOUT_SETS : "records"

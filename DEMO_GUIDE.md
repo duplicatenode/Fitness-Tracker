@@ -91,14 +91,14 @@ Open `database\docs\UI_TABLE_MAPPING.md`. One row per screen: the API it calls, 
 ```
 cmd /c "mysql -u ft_admin -p -h localhost fittrack_db < database\demo\03_crud_all_tables.sql"
 ```
-Inserts, updates and deletes rows in all 10 tables, checks the rows, then deletes them again (children first).
+Inserts, updates and deletes rows in all 11 tables, checks the rows, then deletes them again (children first).
 The final line should show `leftover 0`. Every line is also in the file, so you can copy any single command into the notepad.
 
 ### Item 6 - Queries
 ```
 cmd /c "mysql -u ft_admin -p -h localhost fittrack_db < database\queries.sql"
 ```
-14 labelled queries: inner join, aggregates with GROUP BY and HAVING, subqueries (NOT IN and NOT EXISTS), a transaction with rollback,
+15 labelled queries: inner join, aggregates with GROUP BY and HAVING, subqueries (NOT IN and NOT EXISTS), a transaction with rollback,
 a correlated subquery, two CTEs (`WITH` and `WITH RECURSIVE`), ORDER BY with LIMIT, window `RANK()`, the view, and `EXPLAIN` showing the index.
 
 ### Item 7 - Trigger and procedure, data before and after
@@ -145,6 +145,13 @@ export REDIS_MEMBER_PASSWORD='the value from your .env'
 bash database/demo/09_redis_acl.sh
 ```
 The member user can write its own journal keys. It gets `NOPERM` on other keys and on `FLUSHALL`/`KEYS`.
+
+### Admin vs member: the exercise catalogue
+The admin decides **which exercises belong to each body part**; a member only ticks body parts.
+1. Sign in as `admin@fittrack.com`, open **Exercise catalogue**: 7 body parts (`body_parts`), 2 exercises each (`exercises`, with default sets x reps). Add one, e.g. body part *Glutes* and exercise *Hip Thrust*, 4 x 10.
+2. Sign in as `demo@fittrack.com`, **Workout Plans -> Create workout plan**, tick *Chest* and *Arms*: the preview lists the 4 exercises, and **Create plan** copies them into `plan_exercises` with one `INSERT ... SELECT` inside a transaction.
+3. Back as admin, try to delete *Bench Press*: refused, because it is used in a plan (`ON DELETE RESTRICT`). Try to delete a body part that still has exercises: refused for the same reason.
+4. In SQL: `SELECT bp.name, COUNT(e.id) FROM body_parts bp LEFT JOIN exercises e ON e.body_part_id = bp.id GROUP BY bp.id, bp.name;` (query 15).
 
 ### Item 10 - Modifications
 The database is rebuilt in one command (`node database\setup_mysql.js`). Each part is a separate file, so changes are quick to make.

@@ -32,7 +32,7 @@ Next.js 16 (App Router, frontend/)  --HTTP + JWT-->  Express 5 API (backend/)  -
    ```
    node database\setup_mysql.js
    ```
-   An older `fittrack_db` can be upgraded in place with `node database\migrate.js`, or dropped first for a clean start.
+   Running it on an older `fittrack_db` upgrades it in place (for example, the old `exercises.muscle_group` text becomes the `body_parts` table); `node database\migrate.js` does the same without re-seeding.
 
 ## Run (three separate terminals, all from the project root)
 | Terminal | Command | Notes |
@@ -47,9 +47,9 @@ Admins see an extra **Users & roles** page.
 ## Roles
 | Level | Role | What it can do |
 |---|---|---|
-| Application (`users.role`) | `member` | own plans, sessions, goals, journal and gallery |
-| Application (`users.role`) | `admin` | everything a member can do, plus **Users & roles** (change roles, see the activity and audit logs) |
-| Database (MySQL roles) | `fittrack_member` (account `ft_member`) | reads app data (never password hashes or the audit log), writes own working data |
+| Application (`users.role`) | `member` | builds plans by picking **body parts** (gets the admin's exercises with default sets/reps); own sessions, goals, journal and gallery |
+| Application (`users.role`) | `admin` | everything a member can do, plus **Exercise catalogue** (body parts, their exercises and default sets/reps) and **Users & roles** (change roles, see the activity and audit logs) |
+| Database (MySQL roles) | `fittrack_member` (account `ft_member`) | reads app data (never password hashes or the audit log), reads but cannot change body parts or exercises, writes own working data |
 | Database (MySQL roles) | `fittrack_admin` (account `ft_admin`) | full control of `fittrack_db` |
 
 ## Where user data lives
@@ -57,7 +57,8 @@ Admins see an extra **Users & roles** page.
 |---|---|---|
 | Account (name, email, bcrypt password hash, role, created, last sign-in) | MySQL | `users` |
 | Personal details | MySQL | `user_profiles` (1:1 with `users`) |
-| Plans, exercises in a plan, sessions, sets, goals | MySQL | `workout_plans`, `plan_exercises`, `exercises`, `workout_sessions`, `workout_sets`, `fitness_goals` |
+| Exercise catalogue (admin-managed) | MySQL | `body_parts`, `exercises` (each exercise has one body part and default sets/reps) |
+| Plans, exercises in a plan, sessions, sets, goals | MySQL | `workout_plans`, `plan_exercises`, `workout_sessions`, `workout_sets`, `fitness_goals` |
 | Automatic logs (written by triggers / procedure) | MySQL | `activity_log`, `role_audit_log` |
 | Wearable readings, daily totals | Memurai | `fittrack:sensors:{userId}`, `fittrack:activity:daily:{userId}:{date}` |
 | Journals, photo entries | Memurai | `fittrack:journal:{userId}:{id}`, `fittrack:photos:{userId}:{id}` |
@@ -68,7 +69,7 @@ Passwords are never stored in plain text: only bcrypt hashes. Database credentia
 | Area | Endpoints | Store |
 |---|---|---|
 | Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/demo`, `GET/PUT /auth/me`, `PUT /auth/password` | MySQL `users`, `user_profiles` (register runs in one transaction) |
-| Plans | `GET /workouts/exercises`, `GET/POST /workouts/plans`, `GET/PUT/DELETE /workouts/plans/:id` | MySQL `workout_plans`, `plan_exercises`, `exercises` |
+| Plans | `GET /workouts/body-parts`, `GET /workouts/exercises`, `GET/POST /workouts/plans` (`{ name, body_part_ids }`), `GET/PUT/DELETE /workouts/plans/:id` | MySQL `workout_plans`, `plan_exercises` (filled by `INSERT ... SELECT` from `exercises`), `body_parts` |
 | Sessions | `GET/POST /workouts/sessions`, `GET /workouts/sessions/:id`, `PUT /workouts/sessions/:id/end` | MySQL `workout_sessions`, `workout_sets` (finishing fires `trg_session_finished`) |
 | Goals | `GET/POST /goals`, `PUT/DELETE /goals/:id` | MySQL `fitness_goals`, progress from MySQL + Memurai |
 | Journal | `GET/POST /journals`, `PUT/DELETE /journals/:id` | Memurai `fittrack:journal:*` |
@@ -76,6 +77,7 @@ Passwords are never stored in plain text: only bcrypt hashes. Database credentia
 | Activity | `GET /activity/status`, `/activity/readings?range=1h\|24h\|7d\|30d`, `/activity/daily?days=N` | Memurai stream + daily hashes |
 | Dashboard | `GET /dashboard` | both |
 | Admin (admin role only) | `GET /admin/users`, `PUT /admin/users/:id/role`, `GET /admin/activity` | MySQL, role change through `sp_change_role` |
+| Catalogue (admin role only) | `GET/POST /admin/body-parts`, `PUT/DELETE /admin/body-parts/:id`, `POST /admin/exercises`, `PUT/DELETE /admin/exercises/:id` | MySQL `body_parts`, `exercises` (`ON DELETE RESTRICT` protects ones in use) |
 
 ## Useful commands
 ```

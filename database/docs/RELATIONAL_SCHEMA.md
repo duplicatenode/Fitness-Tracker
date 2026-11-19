@@ -8,9 +8,10 @@ The relational schema below is the result of mapping that diagram onto MySQL 8 t
 
 | ER construct | Relational translation | Where |
 |---|---|---|
-| Entity `USERS`, `WORKOUT_PLANS`, `EXERCISES`, `WORKOUT_SESSIONS`, `WORKOUT_SETS`, `FITNESS_GOALS` | one table each, the entity key becomes the primary key | `schema.sql` |
+| Entity `USERS`, `BODY_PARTS`, `EXERCISES`, `WORKOUT_PLANS`, `WORKOUT_SESSIONS`, `WORKOUT_SETS`, `FITNESS_GOALS` | one table each, the entity key becomes the primary key | `schema.sql` |
 | 1:1 `USERS` - `USER_PROFILES` | the profile table takes the user's id as **its primary key and foreign key** | `user_profiles.user_id` |
 | 1:N `USERS` - `WORKOUT_PLANS`, `WORKOUT_SESSIONS`, `FITNESS_GOALS`, `ACTIVITY_LOG` | the foreign key `user_id` is placed on the "many" side | `user_id` columns |
+| 1:N `BODY_PARTS` - `EXERCISES` | foreign key `body_part_id` (NOT NULL) on the "many" side; `ON DELETE RESTRICT` (a body part with exercises cannot be deleted) | `exercises.body_part_id` |
 | 1:N `WORKOUT_SESSIONS` - `WORKOUT_SETS` | foreign key `session_id` on the "many" side; `ON DELETE CASCADE` (a set cannot exist without its session) | `workout_sets.session_id` |
 | optional 1:N `WORKOUT_PLANS` - `WORKOUT_SESSIONS` | nullable foreign key `plan_id`; `ON DELETE SET NULL` (history survives a deleted plan) | `workout_sessions.plan_id` |
 | M:N `WORKOUT_PLANS` - `EXERCISES` (with attributes sets, reps, rest...) | **junction table** `PLAN_EXERCISES` with its own key and both foreign keys | `plan_exercises` |
@@ -22,7 +23,9 @@ The relational schema below is the result of mapping that diagram onto MySQL 8 t
 ```
 USERS            (id PK, name, email UK, password_hash, role {admin|member}, created_at, last_login_at)
 USER_PROFILES    (user_id PK/FK -> USERS.id, date_of_birth, gender, height_cm, weight_kg, fitness_level, updated_at)
-EXERCISES        (id PK, name UK, description, muscle_group, equipment_needed)
+BODY_PARTS       (id PK, name UK, description, created_at)
+EXERCISES        (id PK, name UK, description, body_part_id FK -> BODY_PARTS.id, equipment_needed,
+                  default_sets, default_reps)
 WORKOUT_PLANS    (id PK, user_id FK -> USERS.id, name, description, created_at, updated_at)
 PLAN_EXERCISES   (id PK, plan_id FK -> WORKOUT_PLANS.id, exercise_id FK -> EXERCISES.id,
                   sets, reps, target_weight, rest_seconds, exercise_order)
@@ -49,8 +52,13 @@ ROLE_AUDIT_LOG   (id PK, actor_id FK -> USERS.id, target_user_id FK -> USERS.id,
 | user_profiles | gender | VARCHAR(20) | yes | CHECK in (female, male, non_binary, prefer_not_to_say) |
 | user_profiles | height_cm / weight_kg | DECIMAL(5,1) | yes | CHECK 50-260 cm / 20-400 kg |
 | user_profiles | fitness_level | VARCHAR(20) | yes | CHECK in (beginner, intermediate, advanced) |
+| body_parts | id | INT AUTO_INCREMENT | no | **PK** |
+| body_parts | name | VARCHAR(50) | no | **UNIQUE**, CHECK length 2-50 |
+| body_parts | description / created_at | VARCHAR(255) / TIMESTAMP | yes | |
 | exercises | id | INT AUTO_INCREMENT | no | **PK** |
 | exercises | name | VARCHAR(255) | no | **UNIQUE** |
+| exercises | body_part_id | INT | no | FK to body_parts, **RESTRICT**; index `idx_ex_body_part` |
+| exercises | default_sets / default_reps | INT | no | CHECK 1-50 / 1-500; default 3 / 10; copied into a plan by `INSERT ... SELECT` |
 | workout_plans | id / user_id | INT | no | PK / FK to users, CASCADE |
 | workout_plans | name | VARCHAR(255) | no | |
 | workout_plans | created_at / updated_at | TIMESTAMP | yes | `updated_at` changes automatically on every update (`ON UPDATE CURRENT_TIMESTAMP`) |
@@ -75,7 +83,8 @@ ROLE_AUDIT_LOG   (id PK, actor_id FK -> USERS.id, target_user_id FK -> USERS.id,
 | role_audit_log | actor_id / target_user_id | INT | no | FKs to users, CASCADE |
 | role_audit_log | old_role / new_role | VARCHAR(10) | no | written only by `sp_change_role` |
 
-**Normal form.** Every non-key attribute depends only on its table's primary key (3NF). Exercise details live once
+**Normal form.** Every non-key attribute depends only on its table's primary key (3NF). Body part names live once
+in `body_parts` (an exercise stores only `body_part_id`, so renaming a body part is one UPDATE), exercise details live once
 in `exercises` and are referenced by id; the per-plan targets (sets, reps, rest) live in `plan_exercises`, not in the plan
 or the exercise. The only deliberate duplication is `workout_sessions.plan_id` vs the plan name, which is read by a join.
 
@@ -94,12 +103,12 @@ or the exercise. The only deliberate duplication is `workout_sessions.plan_id` v
 
 | Privilege | `fittrack_member` (account `ft_member`) | `fittrack_admin` (account `ft_admin`) |
 |---|---|---|
-| Read plans, sessions, sets, goals, profiles, exercises | yes | yes |
+| Read plans, sessions, sets, goals, profiles, body parts, exercises | yes | yes |
 | Read `users` columns except `password_hash` | yes | yes (all) |
 | Read `role_audit_log` | **no** | yes |
 | Insert / update / delete own working data (plans, sessions, sets, goals) | yes | yes |
 | Update `users.role` or `password_hash` | **no** | yes |
-| Edit exercise catalogue | **no** (read only) | yes |
+| Edit body parts and the exercise catalogue | **no** (read only) | yes |
 | Execute `sp_change_role` | **no** | yes |
 | DDL (`DROP`, `ALTER`, `CREATE`) | **no** | yes |
 
