@@ -6,6 +6,8 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 const { runSqlFile } = require('./sqlRunner');
 const { createDbAccounts } = require('./security/create_db_accounts');
+const ensureSchema = require('../backend/src/config/ensureSchema');
+const pool = require('../backend/src/config/mysql');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 (async () => {
@@ -22,6 +24,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
         const dir = __dirname;
         console.log(`schema.sql            -> ${await runSqlFile(conn, path.join(dir, 'schema.sql'))} statements`);
+        await ensureSchema();   // upgrades an older fittrack_db in place (no-op on a fresh one)
         console.log(`programmability.sql   -> ${await runSqlFile(conn, path.join(dir, 'programmability.sql'))} statements (triggers, procedure, function, views)`);
         console.log(`seed.sql              -> ${await runSqlFile(conn, path.join(dir, 'seed.sql'))} statements`);
 
@@ -37,5 +40,6 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
         process.exitCode = 1;
     } finally {
         if (conn) await conn.end().catch(() => {});
+        await pool.end().catch(() => {});
     }
 })();

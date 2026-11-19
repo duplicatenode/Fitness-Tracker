@@ -14,9 +14,13 @@ INSERT INTO user_profiles (user_id, date_of_birth, gender, height_cm, weight_kg,
 VALUES (900, '2000-06-15', 'non_binary', 170.0, 70.0, 'beginner');
 UPDATE user_profiles SET weight_kg = 68.5 WHERE user_id = 900;
 
+-- ===================== body_parts =====================
+INSERT INTO body_parts (id, name, description) VALUES (900, 'CRUD Body Part', 'temporary row');
+UPDATE body_parts SET description = 'temporary row (edited)' WHERE id = 900;
+
 -- ===================== exercises =====================
-INSERT INTO exercises (id, name, description, muscle_group, equipment_needed)
-VALUES (900, 'CRUD Test Exercise', 'temporary row', 'Core', 'Bodyweight');
+INSERT INTO exercises (id, name, description, body_part_id, equipment_needed, default_sets, default_reps)
+VALUES (900, 'CRUD Test Exercise', 'temporary row', 900, 'Bodyweight', 3, 10);
 UPDATE exercises SET description = 'temporary row (edited)' WHERE id = 900;
 
 -- ===================== workout_plans =====================
@@ -57,6 +61,7 @@ UPDATE role_audit_log SET new_role = 'member' WHERE id = 900;   -- normally appe
 -- ===================== verify, then DELETE in child-first order =====================
 SELECT 'users' t, COUNT(*) rows_900 FROM users WHERE id = 900
 UNION ALL SELECT 'user_profiles', COUNT(*) FROM user_profiles WHERE user_id = 900
+UNION ALL SELECT 'body_parts', COUNT(*) FROM body_parts WHERE id = 900
 UNION ALL SELECT 'exercises', COUNT(*) FROM exercises WHERE id = 900
 UNION ALL SELECT 'workout_plans', COUNT(*) FROM workout_plans WHERE id = 900
 UNION ALL SELECT 'plan_exercises', COUNT(*) FROM plan_exercises WHERE id = 900
@@ -73,9 +78,11 @@ DELETE FROM workout_sessions WHERE id = 900;
 DELETE FROM plan_exercises   WHERE id = 900;
 DELETE FROM workout_plans    WHERE id = 900;
 DELETE FROM exercises        WHERE id = 900;
+DELETE FROM body_parts       WHERE id = 900;
 DELETE FROM fitness_goals    WHERE id = 900;
 DELETE FROM user_profiles    WHERE user_id = 900;
 DELETE FROM users            WHERE id = 900;
 
 SELECT 'after delete - rows left for id 900' AS check_step,
-       (SELECT COUNT(*) FROM users WHERE id = 900) + (SELECT COUNT(*) FROM exercises WHERE id = 900) AS leftover;
+       (SELECT COUNT(*) FROM users WHERE id = 900) + (SELECT COUNT(*) FROM exercises WHERE id = 900)
+       + (SELECT COUNT(*) FROM body_parts WHERE id = 900) AS leftover;

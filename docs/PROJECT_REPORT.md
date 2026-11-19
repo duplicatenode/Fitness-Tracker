@@ -19,7 +19,7 @@
 |---|---|---|
 | FR1 | A visitor can create an account (name, email, password, optional profile) and sign in. Passwords are stored as bcrypt hashes. | `POST /auth/register`, `/auth/login`; `users`, `user_profiles` (one transaction) |
 | FR2 | A signed-in user can view and edit their profile and change their password. | `/auth/me`, `/auth/password`; Profile page |
-| FR3 | A member can create, view, edit and delete workout plans made of exercises from a shared catalogue. | `workout_plans`, `plan_exercises`, `exercises`; Workout Plans page |
+| FR3 | A member creates, views, edits and deletes workout plans by choosing **body parts** only; the plan gets the admin's exercises for those body parts with their default sets and reps. | `workout_plans`, `plan_exercises` (filled by `INSERT ... SELECT`), `body_parts`, `exercises`, `exercises`; Workout Plans page |
 | FR4 | A member can start a session from a plan, log sets, and finish the session. A finished session accepts no more sets. | `workout_sessions`, `workout_sets`; trigger `trg_sets_locked_session` |
 | FR5 | A member can set goals (weekly workouts, daily steps, daily calories) and see progress. A weekly goal is marked completed automatically when its target is reached. | `fitness_goals`; trigger `trg_session_finished` |
 | FR6 | A member can write, search, edit and delete journal entries with mood and tags. | Memurai `fittrack:journal:{userId}:{id}` |
@@ -27,6 +27,7 @@
 | FR8 | A member can keep a progress gallery (photo metadata). | Memurai `fittrack:photos:{userId}:{id}` |
 | FR9 | An admin can list all users, see activity and audit logs, and change a user's role. The last admin cannot be demoted. | `/admin/*`; procedure `sp_change_role`, `role_audit_log` |
 | FR10 | A member cannot reach admin screens or admin API routes, and the member database account cannot read password hashes or change roles. | `requireRole('admin')`; MySQL roles `fittrack_admin`, `fittrack_member` |
+| FR11 | An admin manages the exercise catalogue: adds, renames and deletes body parts, and adds, edits and deletes the exercises under each one with their default sets and reps. A body part with exercises, or an exercise used in a plan, cannot be deleted. | Exercise catalogue page; `/api/admin/body-parts`, `/api/admin/exercises`; `ON DELETE RESTRICT` |
 
 ## 3. Database design and implementation (where to find each part)
 
@@ -37,10 +38,10 @@
 | Data dictionary and constraints | `RELATIONAL_SCHEMA.md` section 3 |
 | Database choice and justification | `RELATIONAL_SCHEMA.md` section 6 |
 | NoSQL data model (keys, types, operations) | `RELATIONAL_SCHEMA.md` section 7, [`database/README.md`](../database/README.md) |
-| SQL implementation (DDL) | [`database/schema.sql`](../database/schema.sql) - 10 tables, PK/FK, CHECK, UNIQUE, indexes |
+| SQL implementation (DDL) | [`database/schema.sql`](../database/schema.sql) - 11 tables, PK/FK, CHECK, UNIQUE, indexes |
 | Triggers, procedure, function, views | [`database/programmability.sql`](../database/programmability.sql) |
 | Database roles and grants | [`database/security/roles.sql`](../database/security/roles.sql) |
-| Important queries | [`database/queries.sql`](../database/queries.sql) - 14 labelled queries |
+| Important queries | [`database/queries.sql`](../database/queries.sql) - 15 labelled queries |
 | Screen-to-table mapping | [`database/docs/UI_TABLE_MAPPING.md`](../database/docs/UI_TABLE_MAPPING.md) |
 
 **Important queries (summary of `queries.sql`):** inner and outer joins, aggregates with `GROUP BY` / `HAVING`,
@@ -66,7 +67,7 @@ views, and `EXPLAIN` showing the composite index `idx_user_sessions` in use.
    |                                   |
    v                                   v
  MySQL 8 (fittrack_db)               Memurai / Redis
-   10 tables, 2 triggers,              Stream  fittrack:sensors:{userId}
+   11 tables, 2 triggers,              Stream  fittrack:sensors:{userId}
    1 procedure, 1 function,            Hash    fittrack:activity:daily:{userId}:{date}
    2 views, 2 DB roles                 JSON    fittrack:journal:*, fittrack:photos:*
                                        ^
@@ -83,7 +84,8 @@ All credentials and the JWT secret are read from `.env` (git-ignored). The backe
 | Sign in | ![Sign in](screenshots/01_login.png) |
 | Create account (client-side validation, password checklist) | ![Sign up](screenshots/02_signup.png) |
 | Overview dashboard (MySQL sessions and goals + Memurai live readings) | ![Dashboard](screenshots/03_dashboard.png) |
-| Workout plans | ![Plans](screenshots/04_plans.png) |
+| Workout plans (body-part badges) | ![Plans](screenshots/04_plans.png) |
+| Plan builder: the member only ticks body parts | ![Plan builder](screenshots/13_plan_builder_body_parts.png) |
 | Workout history | ![History](screenshots/05_history.png) |
 | Fitness goals | ![Goals](screenshots/06_goals.png) |
 | Workout journal (Memurai) | ![Journal](screenshots/07_journal.png) |
@@ -92,6 +94,7 @@ All credentials and the JWT secret are read from `.env` (git-ignored). The backe
 | My profile | ![Profile](screenshots/10_profile.png) |
 | Users & roles (admin only: role change, activity log, audit log) | ![Admin](screenshots/11_admin_users_and_roles.png) |
 | Mobile layout | ![Mobile](screenshots/12_mobile_dashboard.png) |
+| Exercise catalogue (admin only: body parts and their exercises) | ![Catalogue](screenshots/14_admin_exercise_catalogue.png) |
 
 ## 6. Testing results
 
@@ -113,7 +116,7 @@ Each time the database was built from scratch with `node database/setup_mysql.js
 | T9 | `fn_session_volume(1)` | 3680 kg | `3680.00` | Pass |
 | T10 | `sp_change_role`: promote and revert a member, then demote the last admin | First two succeed and are audited; last is refused | Role changed twice, 2 audit rows; `Cannot demote the last remaining admin` | Pass |
 | T11 | Three-level nested query (demo 07) | Demo User, 3680 kg | `1  Demo User  3680.00` | Pass |
-| T12 | Insert, update and delete on all 10 tables (demo 03) | All succeed, nothing left behind | `rows left for id 900: 0` | Pass |
+| T12 | Insert, update and delete on all 11 tables (demo 03) | All succeed, nothing left behind | `rows left for id 900: 0` | Pass |
 | T13 | 7 forbidden actions as `ft_member` (read `users` / `password_hash` / audit log, delete exercise, change role, call procedure, `DROP TABLE`) | All denied | 7 of 7 `command denied` | Pass |
 | T14 | `EXPLAIN` on a user's sessions in the last 30 days | Uses `idx_user_sessions` | `key = idx_user_sessions` | Pass |
 | T15 | Memurai create / read / update / delete (demo 08) | All commands succeed; deleted key returns nil | Journal, hash and stream created, read, updated (`SET ... XX`, `HINCRBY`), deleted | Pass |

@@ -23,10 +23,11 @@ FROM workout_sessions
 ORDER BY volume_kg DESC;
 
 -- 3. SUBQUERY (NOT IN) and the same question with a correlated NOT EXISTS
-SELECT name, muscle_group FROM exercises
+SELECT name, body_part_id FROM exercises
 WHERE id NOT IN (SELECT exercise_id FROM plan_exercises);
 
-SELECT e.name, e.muscle_group FROM exercises e
+SELECT e.name, bp.name AS body_part FROM exercises e
+JOIN body_parts bp ON bp.id = e.body_part_id
 WHERE NOT EXISTS (SELECT 1 FROM plan_exercises pe WHERE pe.exercise_id = e.id);
 
 -- 4. DATE-RANGE query (WHERE with date arithmetic)
@@ -118,11 +119,12 @@ GROUP BY c.day
 ORDER BY c.day;
 
 -- 12. ORDER BY + LIMIT: the three most-trained exercises (completed sets)
-SELECT e.name, e.muscle_group, COUNT(ws.id) AS completed_sets
+SELECT e.name, bp.name AS body_part, COUNT(ws.id) AS completed_sets
 FROM workout_sets ws
 JOIN exercises e ON e.id = ws.exercise_id
+JOIN body_parts bp ON bp.id = e.body_part_id
 WHERE ws.completed = TRUE
-GROUP BY e.id, e.name, e.muscle_group
+GROUP BY e.id, e.name, bp.name
 ORDER BY completed_sets DESC, e.name
 LIMIT 3;
 
@@ -133,3 +135,12 @@ SELECT * FROM v_session_summary ORDER BY session_id;
 -- 14. INDEX usage: the composite index idx_user_sessions(user_id, start_time) is used here
 EXPLAIN SELECT id, start_time FROM workout_sessions
 WHERE user_id = 1 AND start_time >= DATE_SUB(NOW(), INTERVAL 30 DAY);
+
+-- 15. GROUP BY over the admin catalogue: how many exercises each body part offers
+--     (LEFT JOIN keeps a body part that has no exercises yet, with 0)
+SELECT bp.name AS body_part, COUNT(e.id) AS exercises,
+       GROUP_CONCAT(e.name ORDER BY e.id SEPARATOR ', ') AS exercise_names
+FROM body_parts bp
+LEFT JOIN exercises e ON e.body_part_id = bp.id
+GROUP BY bp.id, bp.name
+ORDER BY bp.id;

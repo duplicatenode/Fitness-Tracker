@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const workoutController = require('../controllers/workoutController');
+const catalogueController = require('../controllers/catalogueController');
 
 router.use(authMiddleware);
 
 router.get('/exercises', workoutController.getExercises);
+router.get('/body-parts', catalogueController.listBodyParts);
 
 router.get('/plans', workoutController.getPlans);
 router.post('/plans', workoutController.createPlan);
